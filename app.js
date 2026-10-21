@@ -187,7 +187,7 @@
         <div class="watch">
           <div>
             ${l.video ? `<div class="player">${videoTag(l)}</div>`
-              : `<div class="player-soon"><img src="${esc(u(l.poster))}" alt="" /><div>Скоро · ${esc(l.soon || 'в подготовке')}</div></div>`}
+              : `<div class="player-soon"><img src="${esc(u(l.poster))}" alt="" /><div>${l.placeholder ? esc(l.placeholder) : `Скоро · ${esc(l.soon || 'в подготовке')}`}</div></div>`}
             <h1>${esc(l.title)}</h1>
             <div class="meta">${esc(dir.title)}${l.duration ? ` · ${mins(l.duration)}` : ''}</div>
             <p class="desc">${esc(l.desc)}</p>
@@ -269,14 +269,14 @@
             <p class="d">${esc(d.desc)}</p>
             ${d.lectures.map((l) => `
               <div class="row ${l.soon && !l.video ? 'is-soon' : ''}">
-                <a class="cov" ${l.video ? `href="${u(base + '/l/' + l.id)}" data-link` : ''}><img src="${esc(u(l.poster))}" alt="" loading="lazy" /></a>
+                <a class="cov" ${l.video || l.placeholder ? `href="${u(base + '/l/' + l.id)}" data-link` : ''}><img src="${esc(u(l.poster))}" alt="" loading="lazy" /></a>
                 <div>
                   <h3>${esc(l.title)}</h3>
                   <p>${esc(l.desc)}</p>
                   <div style="margin-top:10px">${l.soon && !l.video ? `<span class="tag-soon">Скоро · ${esc(l.soon)}</span>` : `<span class="mono" style="font-size:13px;color:var(--ink-3)">${mins(l.duration)}</span>`}</div>
                 </div>
                 <div class="acts">
-                  ${l.video ? `<a class="btn sm primary" href="${u(base + '/l/' + l.id)}" data-link>Смотреть ${I.arrow}</a>` : ''}
+                  ${l.video || l.placeholder ? `<a class="btn sm primary" href="${u(base + '/l/' + l.id)}" data-link>Смотреть ${I.arrow}</a>` : ''}
                   ${(l.downloads || []).map((f) => `<a class="dl" href="${esc(u(f.url))}" download><span>${I.down} ${esc(f.label)}</span><small>${esc(f.kind)}${f.size ? ' · ' + mb(f.size) : ''}</small></a>`).join('')}
                 </div>
               </div>`).join('')}
