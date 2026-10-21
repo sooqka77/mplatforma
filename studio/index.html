@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>М-Платформа AI — студия методиста</title>
+  <meta name="description" content="Учебные и нормативные материалы для сотрудников из вашей документации: конспекты, тесты, уроки одной точки, карты переналадки, программы обучения." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect x='2' y='2' width='24' height='24' rx='7' fill='%234F46E5'/%3E%3Cpath d='M8 19V9l4 6 4-6v10' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='20.5' cy='9.5' r='1.6' fill='white'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=10" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="24" height="24" rx="7" fill="#4F46E5" />
+        <path d="M8 19V9l4 6 4-6v10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="20.5" cy="9.5" r="1.6" fill="white" />
+      </svg>
+      <span>М-Платформа <span class="ai">AI</span></span>
+      <span class="brand-sub">Студия методиста</span>
+    </a>
+    <div class="spacer"></div>
+    <nav class="topnav" id="topnav">
+      <a href="/mplatforma/">Лекции</a>
+      <a href="#/">О студии</a>
+      <a href="#/studio">Студия</a>
+    </nav>
+    <span class="status-pill" id="status"><span class="dot"></span><span id="status-text">проверяем модель…</span></span>
+  </header>
+
+  <!-- ───── Лендинг -->
+  <div id="view-landing">
+    <main class="landing">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">ИИ-студия для корпоративного обучения</div>
+          <h1>Учебные материалы из&nbsp;вашей документации — <em>за&nbsp;минуты</em></h1>
+          <p class="lead">Загрузите регламент, инструкцию или руководство по эксплуатации. Студия соберёт конспект, тест, урок одной точки, карту переналадки или программу обучения — строго по источнику, без выдуманных фактов.</p>
+          <div class="hero-cta">
+            <a class="btn accent" href="#/studio">Открыть студию
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a class="btn" href="#formats">21 формат материалов</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hv-card hv-src">
+            <div class="hv-tag">Источник · регламент</div>
+            <div class="hv-title">Переналадка фасовочной машины на новый формат пакета</div>
+            <div class="hv-tag" style="margin:2px 0 6px">4 стр. · 8 разделов</div>
+            <div class="ln"></div><div class="ln m"></div><div class="ln"></div><div class="ln s"></div><div class="ln m"></div><div class="ln"></div><div class="ln s"></div>
+          </div>
+          <div class="hv-outs">
+          <div class="hv-card hv-out">
+            <span class="pill ops">Эксплуатация и ТО</span>
+            <div class="hv-title">Карта переналадки</div>
+            <div class="row"><span class="n">01</span>До остановки — 6 шагов</div>
+            <div class="row"><span class="n">02</span>Во время остановки — 11</div>
+          </div>
+          <div class="hv-card hv-out">
+            <span class="pill assess">Проверка знаний</span>
+            <div class="hv-title">Лист оценки навыка</div>
+            <div class="row"><span class="n">⚠️</span>Критичных шагов — 4</div>
+          </div>
+          <div class="hv-card hv-out">
+            <span class="pill docs">Документы обучения</span>
+            <div class="hv-title">Программа стажировки</div>
+            <div class="row"><span class="n">→</span>ГОСТ 12.0.004-2015</div>
+          </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Как это работает</h2>
+        <p class="sub">Методист тратит на один комплект материалов дни. Студия делает черновик за минуты — эксперт проверяет и утверждает.</p>
+        <div class="steps">
+          <div class="step"><div class="num">01</div><h3>Загрузите источник</h3><p>Регламент, инструкцию, руководство по эксплуатации, конспект лекции — docx, pdf, txt. Или просто вставьте текст.</p></div>
+          <div class="step"><div class="num">02</div><h3>Выберите формат</h3><p>Один документ или целый комплект: конспект, тест, урок одной точки, лист оценки навыка — из одного источника.</p></div>
+          <div class="step"><div class="num">03</div><h3>Проверьте и выгрузите</h3><p>Готовый документ — в Word или PDF. Всё, чего нет в источнике, помечено: эксперт видит, что дописать.</p></div>
+        </div>
+      </section>
+
+      <section class="section" id="formats">
+        <h2>21 формат — от конспекта до программы обучения</h2>
+        <p class="sub">Учебные материалы, проверка знаний, документы для работы на линии и нормативные документы обучения по ГОСТ и приказам.</p>
+        <div class="cat-grid" id="landing-cats"></div>
+      </section>
+
+      <section class="section">
+        <h2>Правила, которые студия не нарушает</h2>
+        <p class="sub">Зашиты в каждый формат. Выведены из реальных правок заказчиков на производственных курсах.</p>
+        <div class="rules">
+          <div class="rule"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div><div><h3>Источник — единственная истина</h3><p>Цифры, параметры, узлы и роли — только из вашего документа. Никаких фактов «из интернета».</p></div></div>
+          <div class="rule"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div><div><h3>Чего нет — помечено, а не выдумано</h3><p>Нет в источнике момента затяжки — будет «не указано в источнике». Эксперт сразу видит пробелы.</p></div></div>
+          <div class="rule"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.4 8.5 8 9 4.6-.5 8-4 8-9V6z"/></svg></div><div><h3>Безопасность не теряется</h3><p>Блокировка, СИЗ, остановка оборудования — в каждом формате и перед теми действиями, к которым относятся.</p></div></div>
+          <div class="rule"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><h3>Стандарты — в точности</h3><p>Номера ГОСТ, приказов и инструкций не «исправляются» молча. Структура документов — по нормативной базе.</p></div></div>
+        </div>
+      </section>
+
+      <div class="cta-band">
+        <div>
+          <h2>Попробуйте на своём документе</h2>
+          <p>Или возьмите готовый пример — регламент переналадки фасовочной линии.</p>
+        </div>
+        <a class="btn" href="#/studio">Открыть студию</a>
+      </div>
+    </main>
+    <footer class="foot"><span>М-Платформа AI · демо-версия</span><span>Черновики материалов требуют проверки экспертом и утверждения</span></footer>
+  </div>
+
+  <!-- ───── Студия -->
+  <div id="view-studio" class="hidden">
+    <div class="studio">
+      <aside class="src-panel">
+        <div class="src-scroll">
+          <div>
+            <div class="panel-label"><b>Примеры материалов</b><span>учебные</span></div>
+            <div class="examples" id="examples"></div>
+          </div>
+          <div>
+            <div class="panel-label"><b>Свой источник</b><span>текст + файлы</span></div>
+            <label class="drop" id="drop">
+              <input type="file" id="file-input" multiple accept=".txt,.md,.docx,.pdf" hidden />
+              <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></span>
+              <span><div class="t">Загрузить файлы</div><div class="k">docx · pdf · txt · md — можно несколько</div></span>
+            </label>
+            <div class="files" id="files"></div>
+          </div>
+          <div>
+            <textarea class="src-text" id="src-text" placeholder="Вставьте текст регламента, инструкции или лекции. Или просто напишите тему: «Замена ножа поперечной резки на фасовочной машине»"></textarea>
+            <div class="counter" id="counter">0 символов</div>
+          </div>
+          <div>
+            <div class="panel-label"><b>Для кого материал</b></div>
+            <div class="chips" id="audience"></div>
+          </div>
+        </div>
+        <div class="src-foot">
+          <button class="btn primary bundle-btn" id="bundle-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m12 12 8-4.5M12 12v9M12 12 4 7.5"/></svg>
+            <span id="bundle-label">Собрать комплект</span>
+          </button>
+          <div class="k" id="bundle-hint">Выберите пример или добавьте источник</div>
+        </div>
+      </aside>
+
+      <section class="main">
+        <div class="tabs" id="tabs"></div>
+        <div class="main-scroll" id="main-scroll"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
+  <script src="formats.js?v=10"></script>
+  <script src="demo/sources.js?v=10"></script>
+  <script src="demo/cache.js?v=10"></script>
+  <script src="app.js?v=10"></script>
+</body>
+</html>
