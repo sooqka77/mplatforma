@@ -48,6 +48,8 @@
   const dirOf = (data, id) => data.directions.find((d) => d.id === id) || { title: '', color: '#1E40AF' };
   const courseOfLecture = (data, lid) => data.courses.find((c) => c.modules.some((m) => m.lectures.includes(lid)));
   const watchable = (l) => !!(l && (l.video || l.placeholder));
+  // Открыть можно и лекцию без видео, если у неё готов комплект (конспект, тест)
+  const openable = (l) => !!(l && (l.video || l.placeholder || l.kit));
   function nextToWatch(data, c) {
     const ls = lecturesOfCourse(data, c).filter(watchable);
     return ls.find((l) => !isDone(l.id)) || ls[0] || null;
@@ -103,7 +105,7 @@
   function courseCard(data, c, base) {
     const d = dirOf(data, c.direction);
     const pr = courseDone(data, c);
-    const meta = [nLect(c.lectureCount), c.duration ? mins(c.duration) : '', c.videoCount ? '' : 'готовится'].filter(Boolean).join(' · ');
+    const meta = [nLect(c.lectureCount), c.duration ? mins(c.duration) : '', c.kitCount ? 'конспекты и тесты' : '', !c.videoCount && !c.kitCount ? 'готовится' : ''].filter(Boolean).join(' · ');
     return `<a class="ccard" href="${u(base + '/course/' + c.id)}" data-link>
       <div class="cov">${cover(c.cover, c.title, d)}</div>
       <div class="body">
@@ -118,29 +120,66 @@
   function lectureRow(l, base, n) {
     const p = progOf(l.id);
     const st = isDone(l.id) ? 'done' : p ? 'started' : '';
-    const right = !watchable(l) ? `<span class="tag-soon">Скоро · ${esc(l.soon || 'в подготовке')}</span>`
-      : `<span class="mono">${st === 'done' ? 'просмотрено' : st === 'started' ? `с ${clock(p.t)}` : mins(l.duration)}</span>`;
+    const quiz = p && p.quiz ? ` · тест ${p.quiz.score}/${p.quiz.total}` : '';
+    const right = watchable(l) ? `<span class="mono">${st === 'done' ? 'просмотрено' : st === 'started' ? `с ${clock(p.t)}` : mins(l.duration)}${quiz}</span>`
+      : l.kit ? `<span class="mono">конспект и тест${quiz}</span>`
+      : `<span class="tag-soon">Скоро · ${esc(l.soon || 'в подготовке')}</span>`;
     const inner = `<span class="num ${st}">${st === 'done' ? I.check : String(n).padStart(2, '0')}</span>
       <span class="t"><b>${esc(l.title)}</b><small>${esc(l.desc)}</small></span>${right}`;
-    return watchable(l) ? `<a class="lrow" href="${u(base + '/lecture/' + l.id)}" data-link>${inner}</a>` : `<div class="lrow is-soon">${inner}</div>`;
+    return openable(l) ? `<a class="lrow" href="${u(base + '/lecture/' + l.id)}" data-link>${inner}</a>` : `<div class="lrow is-soon">${inner}</div>`;
   }
 
-  // ───── Главная
+  // ───── Главная: цифровое издательство учебных материалов
+  const KIT_ITEMS = [
+    ['Видеолекция с ведущим', 'Короткая лекция по одной главе. Без студии и съёмок — правка текста занимает часы.'],
+    ['Презентация', 'Те же слайды — для очного занятия и для повторения.'],
+    ['Конспект и термины', 'Чтобы вернуться к теме, не пересматривая видео.'],
+    ['Тест с пояснениями', 'Видно, кто действительно понял материал, а кто просто досмотрел.'],
+    ['Практика на рабочем месте', 'Уроки одной точки, кейсы, лист оценки навыка для наставника.'],
+    ['Программа и документы обучения', 'Программа курса, план стажировки — по ГОСТ и приказам.'],
+  ];
+  const SCENARIOS = [
+    ['Есть учебник или регламент', 'Переводим главы в серию лекций с полным комплектом. Факты — строго по источнику: ни одной выдуманной цифры.'],
+    ['Нужен курс, а материалов нет', 'Соберём курс для сотрудников из стандартных учебников, ГОСТов и отраслевых источников и согласуем с вашим экспертом.'],
+    ['Есть сильные эксперты', 'Издадим их знания как курс под вашим брендом. Материалы становятся активом компании: усиливают бренд и экспертизу, их можно предлагать партнёрам и рынку.'],
+  ];
+  const CASES = [
+    { dir: 'Сварочное производство', course: 'svarka-tehnologiya', title: 'Глава учебника «Сварочная дуга и её свойства» стала лекцией',
+      fact: '«Нагрев внутри дуги достигает 7000 °C» — та же цифра в кадре, что и на стр. 45 учебника.',
+      book: ['case_book_p43', 'case_book_p45'], frames: ['case_frame_arc', 'case_frame_temp'] },
+    { dir: 'Мехатроника и робототехника', course: 'meh-osnovy', title: 'Страницы учебника по робототехнике стали наглядными схемами',
+      fact: '«15–30 звеньев, связанных шарнирами» — дословно со стр. 23, теперь в кадре о серпентоморфных роботах.',
+      book: ['case2_book_p23', 'case2_book_p244'], frames: ['case2_frame_types', 'case2_frame_asimo'] },
+  ];
+
   async function home() {
     const data = await getPublic();
-    const featured = Object.values(data.lectures).find(watchable);
-    const top = [...data.courses].sort((a, b) => b.videoCount - a.videoCount).slice(0, 3);
+    const featured = data.lectures['svarka-istoriya-1'] || Object.values(data.lectures).find(watchable);
+    const top = [...data.courses].sort((a, b) => (b.videoCount * 2 + b.kitCount) - (a.videoCount * 2 + a.kitCount)).slice(0, 3);
     const c = data.contacts || {};
-    const total = Object.keys(data.lectures).length;
+    const demo = data.demoCabinet;
+    const caseHtml = (k) => `<div class="case-row">
+        <div class="case-text">
+          <div class="dtag" style="--c:var(--accent)">${esc(k.dir)}</div>
+          <h3>${esc(k.title)}</h3>
+          <p>${esc(k.fact)}</p>
+          <a class="btn sm" href="${u('/course/' + k.course)}" data-link>Смотреть курс ${I.arrow}</a>
+        </div>
+        <div class="case-vis">
+          <div class="case-book"><span class="case-lbl">Было · учебник</span>${k.book.map((b) => `<img src="${u('/img/cases/' + b + '.jpg')}" alt="" loading="lazy" />`).join('')}</div>
+          <div class="case-arrow">→</div>
+          <div class="case-frames"><span class="case-lbl now">Стало · лекция</span>${k.frames.map((f) => `<img src="${u('/img/cases/' + f + '.jpg')}" alt="" loading="lazy" />`).join('')}</div>
+        </div>
+      </div>`;
     app.innerHTML = `
       <div class="wrap">
         <section class="hero">
           <div>
-            <div class="eyebrow">Образовательный контент для компаний</div>
-            <h1>Видеолекции по вашим учебникам — <em>под ключ</em>.</h1>
-            <p class="sub">Отдаёте учебник, методичку или регламент — получаете курс видеолекций с ведущим, презентации и тесты. Сотрудники смотрят их здесь, в два клика.</p>
+            <div class="eyebrow">Цифровое издательство учебных материалов</div>
+            <h1>Учебники и экспертиза компании — в готовые курсы <em>за 2–3 недели</em>.</h1>
+            <p class="sub">Видеолекции с ведущим, презентации, конспекты, тесты и практические форматы — комплектом и в 3–10 раз дешевле классического продакшна.</p>
             <div class="cta">
-              <a class="btn primary" href="${u('/catalog')}" data-link>Смотреть каталог ${I.arrow}</a>
+              ${featured ? `<a class="btn primary" href="${u('/lecture/' + featured.id)}" data-link>${I.playSm} Смотреть пример лекции</a>` : ''}
               <a class="btn" href="#contacts" data-link>Обсудить проект</a>
             </div>
           </div>
@@ -152,24 +191,52 @@
         </section>
 
         <div class="facts">
-          <div class="fact"><b>50+ лекций</b><span>за 2 месяца для корпоративного заказчика</span></div>
-          <div class="fact"><b>${nCourse(data.courses.length)}</b><span>${nLect(total)} в открытом каталоге</span></div>
-          <div class="fact"><b>По учебнику</b><span>каждый факт сверяем с источником</span></div>
+          <div class="fact"><b>2–3 недели</b><span>на курс вместо 2–4 месяцев классического продакшна</span></div>
+          <div class="fact"><b>В 3–10 раз</b><span>дешевле: без студии, съёмок и долгих кругов правок</span></div>
+          <div class="fact"><b>50+ лекций</b><span>за 2 месяца для корпоративной академии промышленного холдинга</span></div>
         </div>
 
-        <section class="section" id="directions">
-          <div class="eyebrow">Направления</div>
-          <h2>С чем мы работаем</h2>
-          <div class="dir-tiles">
-            ${data.directions.map((d) => `<a class="dtile" href="${u('/catalog?d=' + d.id)}" data-link style="--c:${esc(d.color)}">
-              <b>${esc(d.title)}</b><span>${esc(d.short)}</span><small>${nCourse(d.courseCount)} ${I.arrow}</small>
-            </a>`).join('')}
+        <section class="section" id="kit">
+          <div class="eyebrow">Что вы получаете</div>
+          <h2>Не видео, а комплект для обучения</h2>
+          <p class="lead">Каждая лекция выходит с материалами, по которым сотрудник учится, а наставник проверяет.</p>
+          <div class="kit-grid">${KIT_ITEMS.map(([t, d], i) => `<div class="kit-tile"><span class="n">${String(i + 1).padStart(2, '0')}</span><b>${esc(t)}</b><span>${esc(d)}</span></div>`).join('')}</div>
+          ${featured ? `<a class="btn" style="margin-top:18px" href="${u('/lecture/' + featured.id)}" data-link>Посмотреть комплект на примере лекции ${I.arrow}</a>` : ''}
+        </section>
+
+        <section class="section" id="scenarios">
+          <div class="eyebrow">С чего вы приходите</div>
+          <h2>Работаем с тем, что у вас есть, — или собираем с нуля</h2>
+          <div class="scen-grid">${SCENARIOS.map(([t, d], i) => `<div class="scen ${i === 2 ? 'accent' : ''}"><span class="n">${String(i + 1).padStart(2, '0')}</span><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join('')}</div>
+        </section>
+
+        <section class="section" id="cases">
+          <div class="eyebrow">Кейсы</div>
+          <h2>Было учебником — стало курсом</h2>
+          <p class="lead">Плотный текст и таблицы превращаются в кадры, которые понятны с первого взгляда. Цифры и термины — те же, что в источнике.</p>
+          ${CASES.map(caseHtml).join('')}
+        </section>
+
+        <section class="section">
+          <div class="closed">
+            <div>
+              <div class="eyebrow">Издание, а не разовый заказ</div>
+              <h2>Мы остаёмся вашим издательством</h2>
+              <p class="lead" style="margin:0 0 20px">Курс растёт и обновляется вместе с вашим производством — в кабинете компании.</p>
+              ${demo ? `<a class="btn primary" href="${u('/c/' + demo.slug)}" data-link>Посмотреть пример кабинета ${I.arrow}</a>` : ''}
+            </div>
+            <ul>
+              <li>${I.check}<span>Новые лекции выходят по графику — в кабинете видно, что вышло и что готовится</span></li>
+              <li>${I.check}<span>Обновляем материалы, когда меняются стандарты, оборудование и регламенты</span></li>
+              <li>${I.check}<span>Сотрудники смотрят в два клика: без регистрации, с продолжением с места остановки</span></li>
+              <li>${I.check}<span>Видео и презентации можно скачать для внутреннего обучения</span></li>
+            </ul>
           </div>
         </section>
 
         <section class="section">
           <div class="row-head">
-            <div><div class="eyebrow">Курсы</div><h2>С чего начать</h2></div>
+            <div><div class="eyebrow">Открытый каталог</div><h2>Посмотрите, как выглядят наши курсы</h2></div>
             <a class="btn" href="${u('/catalog')}" data-link>Весь каталог ${I.arrow}</a>
           </div>
           <div class="cgrid">${top.map((x) => courseCard(data, x, '')).join('')}</div>
@@ -177,34 +244,28 @@
 
         <section class="section" id="how">
           <div class="eyebrow">Как мы работаем</div>
-          <h2>Три шага от учебника до курса</h2>
+          <h2>Четыре шага от материалов до курса</h2>
           <p class="lead">Эксперт заказчика не пишет сценарии — он принимает готовое.</p>
-          <div class="steps">
-            <div class="step"><div class="n">01</div><h3>Учебник</h3><p>Главы, методички, регламенты — в любом виде: docx, pdf, сканы.</p></div>
-            <div class="step"><div class="n">02</div><h3>Лекция с ведущим</h3><p>Текст, слайды и видео. Каждый факт сверяем с учебником, 1–2 круга правок.</p></div>
-            <div class="step accent"><div class="n">03</div><h3>Курс на платформе</h3><p>Видео, презентация и тест — в кабинете вашей компании.</p></div>
+          <div class="steps four">
+            <div class="step"><div class="n">01</div><h3>Материалы</h3><p>Учебник, методичка, регламент или интервью с экспертом — в любом виде.</p></div>
+            <div class="step"><div class="n">02</div><h3>Сценарий и визуал</h3><p>Делим на лекции, готовим текст и слайды. Каждый факт сверяем с источником.</p></div>
+            <div class="step"><div class="n">03</div><h3>Лекция и комплект</h3><p>Видео с ведущим, презентация, конспект, тест и практика. 1–2 круга правок.</p></div>
+            <div class="step accent"><div class="n">04</div><h3>Кабинет и обновления</h3><p>Курс в кабинете компании, новые выпуски и обновления по графику.</p></div>
           </div>
         </section>
 
-        <section class="section">
-          <div class="closed">
-            <div>
-              <div class="eyebrow">Для заказчиков</div>
-              <h2>Кабинет вашей компании — по ссылке и паролю</h2>
-              <p class="lead" style="margin:0">Внутри — курсы по вашему контракту. Новые лекции появляются по мере выхода.</p>
-            </div>
-            <ul>
-              <li>${I.check}<span>Смотреть онлайн — без регистрации и установки программ</span></li>
-              <li>${I.check}<span>Продолжать с места, где остановились</span></li>
-              <li>${I.check}<span>Скачивать видео и презентации для внутреннего обучения</span></li>
-            </ul>
+        ${window.MP_STUDIO ? `<section class="section">
+          <div class="studio-band">
+            <div><div class="eyebrow">Наша редакция</div><h3>Редакция на ИИ собирает 21 формат материалов из одного документа</h3>
+            <p>Конспекты, тесты, уроки одной точки, программы обучения — так мы делаем быстро и дёшево, не теряя точности.</p></div>
+            <a class="btn" href="${u(window.MP_STUDIO)}">Посмотреть редакцию ${I.arrow}</a>
           </div>
-        </section>
+        </section>` : ''}
 
         <section class="section" id="contacts">
           <div class="eyebrow">Контакты</div>
           <h2>Соберём пилотную лекцию по вашему материалу</h2>
-          <p class="lead">Напишите — обсудим тему пилота за 15 минут.</p>
+          <p class="lead">Пришлите главу учебника или регламент — через неделю покажем лекцию с комплектом. Без обязательств.</p>
           <div class="contacts">
             <div><div class="name">${esc(c.name)}</div><div class="role">${esc(c.role)}</div></div>
             <div class="links">
@@ -216,7 +277,7 @@
         </section>
         <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
       </div>`;
-    document.title = 'М-Платформа — видеолекции по вашим учебникам';
+    document.title = 'М-Платформа — цифровое издательство учебных материалов';
   }
 
   // ───── Рубрикатор
@@ -265,7 +326,7 @@
     const c = data.courses.find((x) => x.id === id);
     if (!c) return notFound();
     const d = dirOf(data, c.direction);
-    const next = nextToWatch(data, c);
+    const next = nextToWatch(data, c) || lecturesOfCourse(data, c).find(openable);
     const pr = courseDone(data, c);
     const started = next && progOf(next.id);
     let n = 0;
@@ -279,7 +340,7 @@
             <p class="lead">${esc(c.short)}</p>
             <div class="meta">${[nLect(c.lectureCount), c.duration ? mins(c.duration) : '', pr.total && pr.done ? `просмотрено ${pr.done} из ${pr.total}` : ''].filter(Boolean).join(' · ')}</div>
             <div class="cta">
-              ${next ? `<a class="btn primary" href="${u(base + '/lecture/' + next.id)}" data-link>${I.playSm} ${started ? 'Продолжить' : pr.done ? 'Следующая лекция' : 'Начать смотреть'}</a>`
+              ${next ? `<a class="btn primary" href="${u(base + '/lecture/' + next.id)}" data-link>${I.playSm} ${started ? 'Продолжить' : pr.done ? 'Следующая лекция' : watchable(next) ? 'Начать смотреть' : 'Открыть первую лекцию'}</a>`
                 : '<span class="tag-soon">Лекции курса готовятся</span>'}
             </div>
           </div>
@@ -303,6 +364,93 @@
     document.title = `${c.title} — М-Платформа`;
   }
 
+  // ───── Комплект лекции: конспект, термины, тест (public/kit/<id>.json), слайды (public/slides/<id>/NN.jpg)
+  const kitCache = {};
+  async function getKit(id) {
+    if (!(id in kitCache)) kitCache[id] = await fetch(u(`/kit/${id}.json`)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    return kitCache[id];
+  }
+  const md = (s) => (window.marked && window.DOMPurify ? DOMPurify.sanitize(marked.parse(String(s || ''), { gfm: true, breaks: true })) : `<p>${esc(s)}</p>`);
+  // Заголовок «# …» в конспекте повторяет название лекции — на странице он уже есть
+  const dropTitle = (s) => String(s || '').replace(/^\s*#\s+[^\n]*\n+/, '');
+
+  function quizView(id, test) {
+    const best = (progOf(id) || {}).quiz;
+    return `<div class="quiz" data-id="${esc(id)}">
+      <div class="quiz-head"><b>Проверьте себя: ${test.length} ${plural(test.length, 'вопрос', 'вопроса', 'вопросов')}</b><span class="mono" id="quiz-score">${best ? `лучший результат ${best.score} из ${best.total}` : 'выберите ответ — сразу увидите, верно ли'}</span></div>
+      ${test.map((q, qi) => `<div class="qq" data-q="${qi}">
+        <div class="qt"><span class="mono">${qi + 1}.</span> ${esc(q.q)}</div>
+        <div class="qo">${q.options.map((o, oi) => `<button class="qopt" data-q="${qi}" data-o="${oi}"><span>${'АБВГ'[oi] || oi + 1}</span>${esc(o)}</button>`).join('')}</div>
+        <div class="qe hidden"></div>
+      </div>`).join('')}
+      <div class="quiz-res hidden" id="quiz-res"></div>
+    </div>`;
+  }
+  function bindQuiz(id, test) {
+    const box = app.querySelector('.quiz');
+    if (!box) return;
+    const answers = {};
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('.qopt');
+      if (b && !(b.dataset.q in answers)) {
+        const qi = +b.dataset.q, oi = +b.dataset.o, q = test[qi];
+        answers[qi] = oi === q.answer;
+        const wrap = box.querySelector(`.qq[data-q="${qi}"]`);
+        wrap.querySelectorAll('.qopt').forEach((x) => {
+          x.disabled = true;
+          if (+x.dataset.o === q.answer) x.classList.add('ok');
+          else if (+x.dataset.o === oi) x.classList.add('bad');
+        });
+        const ex = wrap.querySelector('.qe');
+        ex.innerHTML = `<b>${answers[qi] ? 'Верно.' : 'Неверно.'}</b> ${esc(q.explain || '')}`;
+        ex.classList.remove('hidden');
+        const n = Object.keys(answers).length, ok = Object.values(answers).filter(Boolean).length;
+        box.querySelector('#quiz-score').textContent = `отвечено ${n} из ${test.length} · верно ${ok}`;
+        if (n === test.length) {
+          const prev = (progOf(id) || {}).quiz;
+          if (!prev || ok > prev.score) progSave(id, { quiz: { score: ok, total: test.length } });
+          const res = box.querySelector('#quiz-res');
+          res.innerHTML = `<b>Результат: ${ok} из ${test.length}</b><span>${ok >= Math.ceil(test.length * 0.8) ? 'Материал усвоен.' : 'Стоит вернуться к конспекту и пройти ещё раз.'}</span><button class="btn sm" id="quiz-again">Пройти ещё раз</button>`;
+          res.classList.remove('hidden');
+          res.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+      if (e.target.closest('#quiz-again')) showTab('test');
+    });
+  }
+
+  let tabState = null; // { l, kit, base }
+  async function showTab(name) {
+    if (!tabState) return;
+    const { l } = tabState;
+    app.querySelectorAll('.ltab').forEach((t) => t.classList.toggle('on', t.dataset.tab === name));
+    const body = app.querySelector('#tab-body');
+    if (name === 'about') {
+      body.innerHTML = `<p class="desc">${esc(l.desc)}</p>
+        ${l.outline.length ? `<div class="outline"><h3>Содержание лекции</h3><ol>${l.outline.map((o) => `<li>${esc(o)}</li>`).join('')}</ol></div>` : ''}`;
+      return;
+    }
+    if (name === 'slides') {
+      body.innerHTML = `<div class="slides">${Array.from({ length: l.slides }, (_, i) => {
+        const src = u(`/slides/${l.id}/${String(i + 1).padStart(2, '0')}.jpg`);
+        return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="Слайд ${i + 1}" loading="lazy" /><span class="mono">${i + 1}</span></a>`;
+      }).join('')}</div>`;
+      return;
+    }
+    if (name === 'files') {
+      body.innerHTML = `<div class="downloads">${l.downloads.map((f) =>
+        `<a class="dl" href="${esc(u(f.url))}" download>${I.down}${esc(f.label)} <small>${esc(f.kind)}${f.size ? ' · ' + mb(f.size) : ''}</small></a>`).join('')}</div>`;
+      return;
+    }
+    body.innerHTML = '<div class="empty" style="padding:40px 0">Загружаем…</div>';
+    const kit = await getKit(l.id);
+    if (!kit) { body.innerHTML = '<div class="empty">Материал готовится.</div>'; return; }
+    if (name === 'notes') body.innerHTML = `<div class="doc">${md(dropTitle(kit.notes))}</div><p class="kit-note">Конспект собран по тексту лекции, подготовленному по учебнику.</p>`;
+    if (name === 'terms') body.innerHTML = `<div class="doc">${md(dropTitle(kit.glossary))}</div>`;
+    if (name === 'test') { body.innerHTML = quizView(l.id, kit.test); bindQuiz(l.id, kit.test); }
+  }
+
   // ───── Лекция (публичная и в кабинете)
   function lecturePage(data, id, base, crumbsFor) {
     const l = data.lectures[id];
@@ -310,9 +458,14 @@
     const c = courseOfLecture(data, id);
     const ls = c ? lecturesOfCourse(data, c) : [l];
     const i = ls.findIndex((x) => x.id === id);
-    const prev = ls.slice(0, i).reverse().find(watchable);
-    const next = ls.slice(i + 1).find(watchable);
+    const prev = ls.slice(0, i).reverse().find(openable);
+    const next = ls.slice(i + 1).find(openable);
     const d = c ? dirOf(data, c.direction) : { title: '', color: '#1E40AF' };
+    const tabs = [['about', 'О лекции']];
+    if (l.kit) tabs.push(['notes', 'Конспект'], ['test', 'Тест'], ['terms', 'Термины']);
+    if (l.slides) tabs.push(['slides', `Слайды · ${l.slides}`]);
+    if ((l.downloads || []).length) tabs.push(['files', 'Скачать']);
+    const note = l.placeholder || (l.kit ? 'Видео скоро · конспект и тест уже здесь' : 'Скоро · ' + (l.soon || 'в подготовке'));
     let n = 0;
     app.innerHTML = `
       <div class="wrap">
@@ -321,28 +474,30 @@
           <div>
             ${l.video ? `<div class="player"><video playsinline preload="metadata" controlsList="nodownload" poster="${esc(u(l.poster))}" oncontextmenu="return false"><source src="${esc(u(l.video))}" type="video/mp4" /></video></div>
                 <div class="resume hidden" id="resume-hint"></div>`
-              : `<div class="player-soon">${cover(l.poster, l.title, d)}<div class="ps-note"><span>${esc(l.placeholder || ('Скоро · ' + (l.soon || 'в подготовке')))}</span></div></div>`}
+              : `<div class="player-soon ${l.poster ? '' : 'compact'}">${cover(l.poster, l.title, d)}<div class="ps-note"><span>${esc(note)}</span></div></div>`}
             <div class="lec-nav">
               ${prev ? `<a class="btn sm" href="${u(base + '/lecture/' + prev.id)}" data-link>${I.back} Предыдущая</a>` : '<span></span>'}
               ${next ? `<a class="btn sm primary" href="${u(base + '/lecture/' + next.id)}" data-link>Следующая ${I.arrow}</a>` : (c ? `<a class="btn sm" href="${u(base + '/course/' + c.id)}" data-link>К программе курса</a>` : '')}
             </div>
             <h1>${esc(l.title)}</h1>
             <div class="meta">${esc(c ? c.title : '')}${l.duration ? ` · ${mins(l.duration)}` : ''}</div>
-            <p class="desc">${esc(l.desc)}</p>
-            ${(l.downloads || []).length ? `<div class="downloads">${l.downloads.map((f) =>
-              `<a class="dl" href="${esc(u(f.url))}" download>${I.down}${esc(f.label)} <small>${esc(f.kind)}${f.size ? ' · ' + mb(f.size) : ''}</small></a>`).join('')}</div>` : ''}
-            ${l.outline.length ? `<div class="outline"><h3>Содержание лекции</h3><ol>${l.outline.map((o) => `<li>${esc(o)}</li>`).join('')}</ol></div>` : ''}
+            ${tabs.length > 1 ? `<div class="ltabs">${tabs.map(([k, t]) => `<button class="ltab" data-tab="${k}">${esc(t)}</button>`).join('')}</div>` : ''}
+            <div id="tab-body"></div>
           </div>
           <aside class="side">
             <h4>${esc(c ? c.title : 'Лекции')}</h4>
             ${ls.map((o) => {
               const st = isDone(o.id) ? 'done' : '';
-              const inner = `<span class="num ${st}">${st ? I.check : String(++n).padStart(2, '0')}</span><span><b>${esc(o.title)}</b><span>${watchable(o) ? mins(o.duration) : 'скоро'}</span></span>`;
-              return watchable(o) ? `<a class="side-item ${o.id === id ? 'cur' : ''}" href="${u(base + '/lecture/' + o.id)}" data-link>${inner}</a>` : `<div class="side-item is-soon ${o.id === id ? 'cur' : ''}">${inner}</div>`;
+              const sub = watchable(o) ? mins(o.duration) : o.kit ? 'конспект и тест' : 'скоро';
+              const inner = `<span class="num ${st}">${st ? I.check : String(++n).padStart(2, '0')}</span><span><b>${esc(o.title)}</b><span>${sub}</span></span>`;
+              return openable(o) ? `<a class="side-item ${o.id === id ? 'cur' : ''}" href="${u(base + '/lecture/' + o.id)}" data-link>${inner}</a>` : `<div class="side-item is-soon ${o.id === id ? 'cur' : ''}">${inner}</div>`;
             }).join('')}
           </aside>
         </div>
       </div>`;
+    tabState = { l };
+    app.querySelector('.ltabs')?.addEventListener('click', (e) => { const t = e.target.closest('.ltab'); if (t) showTab(t.dataset.tab); });
+    showTab(!l.video && l.kit ? 'notes' : 'about');
     if (l.video) mountPlayer(l);
     document.title = `${l.title} — М-Платформа`;
   }
@@ -418,8 +573,8 @@
           <h2 class="h2-sm">Новое</h2>
           <div class="fresh">${fresh.map((l) => {
             const c = courseOfLecture(data, l.id);
-            const inner = `<span class="mono">${esc(date(l.added))}</span><b>${esc(l.title)}</b><span>${esc(c ? c.title : '')}</span>${!watchable(l) ? `<span class="tag-soon">Скоро · ${esc(l.soon || 'в подготовке')}</span>` : ''}`;
-            return watchable(l) ? `<a class="fresh-item" href="${u(base + '/lecture/' + l.id)}" data-link>${inner}</a>` : `<div class="fresh-item">${inner}</div>`;
+            const inner = `<span class="mono">${esc(date(l.added))}</span><b>${esc(l.title)}</b><span>${esc(c ? c.title : '')}</span>${!watchable(l) ? `<span class="tag-soon">${l.kit ? 'Конспект и тест · видео скоро' : 'Скоро · ' + esc(l.soon || 'в подготовке')}</span>` : ''}`;
+            return openable(l) ? `<a class="fresh-item" href="${u(base + '/lecture/' + l.id)}" data-link>${inner}</a>` : `<div class="fresh-item">${inner}</div>`;
           }).join('')}</div>
         </section>` : ''}
         <footer class="foot"><span>М-Платформа · mplatforma.tech</span><span>Вопросы — ${esc((data.contacts || {}).email || '')}</span></footer>
@@ -438,9 +593,17 @@
           <div class="err" id="gate-err"></div>
           <button class="btn primary" type="submit">Войти</button>
         </form>
-        <div class="help">Нет пароля? Напишите менеджеру, который прислал ссылку.</div>
+        <div class="help" id="gate-help">Нет пароля? Напишите менеджеру, который прислал ссылку.</div>
       </div></div>`;
     document.title = 'Кабинет компании — М-Платформа';
+    getPublic().then((pd) => {
+      const demo = pd && pd.demoCabinet;
+      if (!demo || demo.slug !== slug || !demo.password) return;
+      const h = document.getElementById('gate-help');
+      if (!h) return;
+      h.innerHTML = `Это демо-кабинет. Пароль: <b class="mono">${esc(demo.password)}</b> <button class="btn sm" id="gate-fill" type="button">Подставить</button>`;
+      document.getElementById('gate-fill').addEventListener('click', () => { document.getElementById('pw').value = demo.password; document.getElementById('gate-form').requestSubmit(); });
+    }).catch(() => {});
     const form = document.getElementById('gate-form');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
