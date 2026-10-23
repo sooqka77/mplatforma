@@ -133,10 +133,12 @@
   const KIT_ITEMS = [
     ['Видеолекция с ведущим', 'Короткая лекция по одной главе. Без студии и съёмок — правка текста занимает часы.'],
     ['Презентация', 'Те же слайды — для очного занятия и для повторения.'],
+    ['Методичка для преподавателя', 'Цели и план занятия, вопросы для обсуждения, практика и проверка.'],
     ['Конспект и термины', 'Чтобы вернуться к теме, не пересматривая видео.'],
     ['Тест с пояснениями', 'Видно, кто действительно понял материал, а кто просто досмотрел.'],
     ['Практика на рабочем месте', 'Уроки одной точки, кейсы, лист оценки навыка для наставника.'],
     ['Программа и документы обучения', 'Программа курса, план стажировки — по ГОСТ и приказам.'],
+    ['Выгрузка в вашу LMS', 'SCORM-пакет: видео, конспект и тест одним модулем, результаты — в вашей системе.'],
   ];
   const SCENARIOS = [
     ['Есть учебник или регламент', 'Переводим главы в серию лекций с полным комплектом. Факты — строго по источнику: ни одной выдуманной цифры.'],
@@ -201,7 +203,10 @@
           <h2>Не видео, а комплект для обучения</h2>
           <p class="lead">Каждая лекция выходит с материалами, по которым сотрудник учится, а наставник проверяет.</p>
           <div class="kit-grid">${KIT_ITEMS.map(([t, d], i) => `<div class="kit-tile"><span class="n">${String(i + 1).padStart(2, '0')}</span><b>${esc(t)}</b><span>${esc(d)}</span></div>`).join('')}</div>
-          ${featured ? `<a class="btn" style="margin-top:18px" href="${u('/lecture/' + featured.id)}" data-link>Посмотреть комплект на примере лекции ${I.arrow}</a>` : ''}
+          <div class="cta" style="margin-top:18px">
+            ${featured ? `<a class="btn" href="${u('/lecture/' + featured.id)}" data-link>Посмотреть комплект на примере лекции ${I.arrow}</a>` : ''}
+            <a class="btn" href="${u('/corp')}" data-link>Как мы работаем с учебными центрами ${I.arrow}</a>
+          </div>
         </section>
 
         <section class="section" id="scenarios">
@@ -278,6 +283,96 @@
         <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
       </div>`;
     document.title = 'М-Платформа — цифровое издательство учебных материалов';
+  }
+
+  // ───── Для корпоративных университетов и учебных центров
+  async function corpPage() {
+    const data = await getPublic();
+    const c = data.contacts || {};
+    const sample = data.lectures['svarka-istoriya-1'];
+    const mail = c.email ? `mailto:${c.email}?subject=${encodeURIComponent('Пилотная лекция М-Платформы')}&body=${encodeURIComponent('Здравствуйте! Хотим пилотную лекцию по нашему материалу.\n\nКомпания и учебный центр:\nТема и материал (глава, регламент):\nДля кого обучение:\nКакая LMS используется:\nКонтакт:')}` : '';
+    const STEPS = [
+      ['До старта', 'Бриф на 30 минут и NDA', 'Вы передаёте материалы: учебник или главы, регламенты, методички — в любом виде. Назначаете эксперта для согласования.'],
+      ['Неделя 1', 'Пилотная лекция с комплектом', 'Видео, презентация, методичка, конспект и тест по одной главе. Согласуем стиль, ведущего, подачу.'],
+      ['Недели 2–3', 'Серия лекций', 'Готовим остальные главы. Каждый факт сверяем с источником, эксперт проверяет — 1–2 круга правок.'],
+      ['Сдача', 'Файлы и пакеты для LMS', 'Видео, презентации, методички и SCORM-пакеты — загружаете в свою LMS или открываете сотрудникам кабинет на платформе.'],
+      ['Дальше', 'Издание по подписке', 'План выпусков на год, новые лекции по графику, обновления при изменении стандартов, оборудования и регламентов.'],
+    ];
+    const FILES = [
+      ['Видеолекция с ведущим', 'MP4', 'Лекция по одной главе, ведущий-аватар, визуал к каждому блоку'],
+      ['Презентация', 'PDF, PPTX', 'Слайды лекции — для очного занятия и повторения'],
+      ['Методичка для преподавателя', 'DOCX, PDF', 'Цели и план занятия, понятия, вопросы для обсуждения, практика, проверка'],
+      ['Конспект и термины', 'DOCX, PDF', 'Краткое содержание и словарь — чтобы вернуться к теме без видео'],
+      ['Тест с пояснениями', 'в SCORM и DOCX', '10 вопросов к лекции, порог прохождения — 80%'],
+      ['SCORM-пакет', 'SCORM 1.2, ZIP', 'Видео, конспект и тест одним модулем: балл, статус и место остановки уходят в вашу LMS'],
+    ];
+    app.innerHTML = `
+      <div class="wrap">
+        <section class="corp-hero">
+          <div class="eyebrow">Для корпоративных университетов и учебных центров</div>
+          <h1>Переиздаём ваши учебные материалы в курсы — и сдаём прямо в вашу LMS</h1>
+          <p class="sub">Свежие и понятные форматы для сотрудников на основе того, что у вас уже есть: учебников, регламентов, методичек. За 2–3 недели и в 3–10 раз дешевле классического продакшна.</p>
+          <div class="cta">
+            ${mail ? `<a class="btn primary" href="${mail}">Запросить пилотную лекцию ${I.arrow}</a>` : ''}
+            <a class="btn" href="${u('/scorm/svarka-istoriya-1.zip')}" download>${I.down} Пример SCORM-пакета</a>
+          </div>
+        </section>
+
+        <section class="section" style="padding-top:20px">
+          <div class="eyebrow">Как проходит проект</div>
+          <h2>От брифа до курса в вашей LMS — за 2–3 недели</h2>
+          <div class="timeline">${STEPS.map(([w, t, d], i) => `<div class="tl ${i === STEPS.length - 1 ? 'accent' : ''}"><span class="mono">${esc(w)}</span><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</div>
+        </section>
+
+        <section class="section">
+          <div class="eyebrow">Что вы получаете</div>
+          <h2>Комплект к каждой лекции — в форматах, которые принимает ваша система</h2>
+          <div class="files-table">
+            ${FILES.map(([t, f, d]) => `<div class="ft-row"><b>${esc(t)}</b><span class="mono">${esc(f)}</span><span>${esc(d)}</span></div>`).join('')}
+          </div>
+          <p class="lead" style="margin-top:16px">SCORM 1.2 загружается в iSpring LMS, WebTutor, Mirapolis, Moodle и другие системы с поддержкой стандарта.
+            ${sample ? `Посмотрите комплект целиком <a class="link" href="${u('/lecture/' + sample.id)}" data-link>на примере лекции</a>.` : ''}</p>
+        </section>
+
+        <section class="section">
+          <div class="corp-grid">
+            <div class="box-lg">
+              <div class="eyebrow">Права и безопасность</div>
+              <h3>Ваши материалы остаются вашими</h3>
+              <ul>
+                <li>${I.check}<span>NDA — до передачи материалов</span></li>
+                <li>${I.check}<span>Все права на готовые материалы — у вас: курс выходит под вашим брендом</span></li>
+                <li>${I.check}<span>Можем ничего не размещать у себя: сдаём файлами и SCORM-пакетами в вашу LMS</span></li>
+                <li>${I.check}<span>Кабинет на платформе — по ссылке и паролю, закрыт от поисковиков</span></li>
+              </ul>
+            </div>
+            <div class="box-lg accent">
+              <div class="eyebrow">Издание, а не разовый заказ</div>
+              <h3>Курсы обновляются вместе с вашим производством</h3>
+              <ul>
+                <li>${I.check}<span>Годовой план выпусков: новые лекции по графику</span></li>
+                <li>${I.check}<span>Обновления при изменении стандартов, оборудования и регламентов — в согласованные сроки</span></li>
+                <li>${I.check}<span>В кабинете видно, что вышло, что в работе и что обновлено</span></li>
+                <li>${I.check}<span>Материалы становятся активом компании: их можно предлагать партнёрам и рынку</span></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="pilot">
+          <div class="cta-band">
+            <div><h2>Пилотная лекция за неделю — без обязательств</h2>
+            <p>Пришлите одну главу или регламент: покажем лекцию с полным комплектом и SCORM-пакетом для вашей LMS.</p></div>
+            <div class="cta">
+              ${mail ? `<a class="btn primary" href="${mail}">Написать на почту</a>` : ''}
+              ${c.telegram ? `<a class="btn" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
+              ${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}
+            </div>
+          </div>
+        </section>
+        <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
+      </div>`;
+    document.title = 'Для корпоративных университетов — М-Платформа';
   }
 
   // ───── Рубрикатор
@@ -420,6 +515,37 @@
     });
   }
 
+  // Документ комплекта (конспект, методичка) — в Word (.doc из HTML) или на печать / в PDF
+  function docHtml(title, body) {
+    return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>@page{size:A4;margin:2cm 1.5cm 2cm 2cm}body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.45;color:#111}h1{font-size:17pt}h2{font-size:13.5pt;margin-top:14pt}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:4pt 6pt;vertical-align:top;font-size:10pt}th{background:#eee}.mp{color:#1E40AF;font-size:9pt;letter-spacing:.06em;text-transform:uppercase}</style></head>
+<body><div class="mp">М-Платформа · цифровое издательство учебных материалов</div><h1>${esc(title)}</h1>${body}</body></html>`;
+  }
+  function saveWord(title, body) {
+    const blob = new Blob(['\ufeff', docHtml(title, body)], { type: 'application/msword' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = title.replace(/[\\/:*?"<>|«»]/g, '').slice(0, 90) + '.doc';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function printDoc(title, body) {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(docHtml(title, body)); w.document.close(); w.focus();
+    setTimeout(() => w.print(), 300);
+  }
+  const docActions = `<div class="doc-actions"><button class="btn sm" data-doc="word">${I.down} Скачать в Word</button><button class="btn sm" data-doc="print">Распечатать или PDF</button></div>`;
+  function bindDocActions(title) {
+    const box = app.querySelector('#tab-body');
+    box.querySelector('.doc-actions')?.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-doc]'); if (!b) return;
+      const body = box.querySelector('.doc').innerHTML;
+      b.dataset.doc === 'word' ? saveWord(title, body) : printDoc(title, body);
+    });
+  }
+
   let tabState = null; // { l, kit, base }
   async function showTab(name) {
     if (!tabState) return;
@@ -446,7 +572,12 @@
     body.innerHTML = '<div class="empty" style="padding:40px 0">Загружаем…</div>';
     const kit = await getKit(l.id);
     if (!kit) { body.innerHTML = '<div class="empty">Материал готовится.</div>'; return; }
-    if (name === 'notes') body.innerHTML = `<div class="doc">${md(dropTitle(kit.notes))}</div><p class="kit-note">Конспект собран по тексту лекции, подготовленному по учебнику.</p>`;
+    if (name === 'notes') { body.innerHTML = `${docActions}<div class="doc">${md(dropTitle(kit.notes))}</div><p class="kit-note">Конспект собран по тексту лекции, подготовленному по учебнику.</p>`; bindDocActions(`Конспект — ${l.title}`); }
+    if (name === 'guide') {
+      if (!kit.guide) { body.innerHTML = '<div class="empty">Методичка готовится.</div>'; return; }
+      body.innerHTML = `<div class="kit-lead">Для преподавателя или наставника: цели и план занятия, ключевые понятия, вопросы для обсуждения, практика и проверка.</div>${docActions}<div class="doc">${md(dropTitle(kit.guide))}</div>`;
+      bindDocActions(`Методичка — ${l.title}`);
+    }
     if (name === 'terms') body.innerHTML = `<div class="doc">${md(dropTitle(kit.glossary))}</div>`;
     if (name === 'test') { body.innerHTML = quizView(l.id, kit.test); bindQuiz(l.id, kit.test); }
   }
@@ -462,7 +593,7 @@
     const next = ls.slice(i + 1).find(openable);
     const d = c ? dirOf(data, c.direction) : { title: '', color: '#1E40AF' };
     const tabs = [['about', 'О лекции']];
-    if (l.kit) tabs.push(['notes', 'Конспект'], ['test', 'Тест'], ['terms', 'Термины']);
+    if (l.kit) tabs.push(['notes', 'Конспект'], ['test', 'Тест'], ['terms', 'Термины'], ['guide', 'Методичка']);
     if (l.slides) tabs.push(['slides', `Слайды · ${l.slides}`]);
     if ((l.downloads || []).length) tabs.push(['files', 'Скачать']);
     const note = l.placeholder || (l.kit ? 'Видео скоро · конспект и тест уже здесь' : 'Скоро · ' + (l.soon || 'в подготовке'));
@@ -654,6 +785,7 @@
       if (p === '/' || p === '') { await home(); if (location.hash) document.querySelector(location.hash)?.scrollIntoView(); else window.scrollTo(0, 0); return; }
       window.scrollTo(0, 0);
       if (p === '/catalog') return await catalog();
+      if (p === '/corp') return await corpPage();
       if ((m = /^\/d\/([a-z0-9-]+)$/.exec(p))) { history.replaceState(null, '', u('/catalog?d=' + m[1])); return await catalog(); }
       if ((m = /^\/course\/([a-z0-9-]+)$/.exec(p))) { const data = await getPublic(); return coursePage(data, m[1], '', pubCrumbs(null)); }
       if ((m = /^\/(?:lecture|l)\/([a-z0-9-]+)$/.exec(p))) { const data = await getPublic(); return lecturePage(data, m[1], '', pubCrumbs); }
