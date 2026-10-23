@@ -130,29 +130,78 @@
   }
 
   // ───── Главная: цифровое издательство учебных материалов
-  const KIT_ITEMS = [
-    ['Видеолекция с ведущим', 'Короткая лекция по одной главе. Без студии и съёмок — правка текста занимает часы.'],
-    ['Презентация', 'Те же слайды — для очного занятия и для повторения.'],
-    ['Методичка для преподавателя', 'Цели и план занятия, вопросы для обсуждения, практика и проверка.'],
-    ['Конспект и термины', 'Чтобы вернуться к теме, не пересматривая видео.'],
-    ['Тест с пояснениями', 'Видно, кто действительно понял материал, а кто просто досмотрел.'],
-    ['Практика на рабочем месте', 'Уроки одной точки, кейсы, лист оценки навыка для наставника.'],
-    ['Программа и документы обучения', 'Программа курса, план стажировки — по ГОСТ и приказам.'],
-    ['Выгрузка в вашу LMS', 'SCORM-пакет: видео, конспект и тест одним модулем, результаты — в вашей системе.'],
-  ];
   const SCENARIOS = [
     ['Есть учебник или регламент', 'Переводим главы в серию лекций с полным комплектом. Факты — строго по источнику: ни одной выдуманной цифры.'],
     ['Нужен курс, а материалов нет', 'Соберём курс для сотрудников из стандартных учебников, ГОСТов и отраслевых источников и согласуем с вашим экспертом.'],
     ['Есть сильные эксперты', 'Издадим их знания как курс под вашим брендом. Материалы становятся активом компании: усиливают бренд и экспертизу, их можно предлагать партнёрам и рынку.'],
   ];
-  const CASES = [
-    { dir: 'Сварочное производство', course: 'svarka-tehnologiya', title: 'Глава учебника «Сварочная дуга и её свойства» стала лекцией',
-      fact: '«Нагрев внутри дуги достигает 7000 °C» — та же цифра в кадре, что и на стр. 45 учебника.',
-      book: ['case_book_p43', 'case_book_p45'], frames: ['case_frame_arc', 'case_frame_temp'] },
-    { dir: 'Мехатроника и робототехника', course: 'meh-osnovy', title: 'Страницы учебника по робототехнике стали наглядными схемами',
-      fact: '«15–30 звеньев, связанных шарнирами» — дословно со стр. 23, теперь в кадре о серпентоморфных роботах.',
-      book: ['case2_book_p23', 'case2_book_p244'], frames: ['case2_frame_types', 'case2_frame_asimo'] },
-  ];
+
+  // Анимация «было → стало»: абзац уходит со страницы учебника и становится кадром лекции
+  function baStage(pairs) {
+    const root = app.querySelector('.ba');
+    if (!root) return;
+    const $ = (s) => root.querySelector(s);
+    const scene = $('.ba-scene'), page = $('.ba-page'), img = $('.ba-page img'), hl = $('.ba-hl'), frag = $('.ba-frag'), scr = $('.ba-screen'), shot = $('.ba-screen img');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const src = (f) => u('/img/cases/' + f + '.jpg');
+    pairs.forEach((k) => { new Image().src = src(k.was); new Image().src = src(k.now); });
+    let cur = 0, timers = [];
+    const stop = () => { timers.forEach(clearTimeout); timers = []; };
+    const later = (ms, f) => timers.push(setTimeout(() => (root.isConnected ? f() : stop()), ms));
+    const STEPS = ['s1', 's2', 's3', 's4'];
+
+    function fly() {
+      const R = scene.getBoundingClientRect(), a = hl.getBoundingClientRect(), b = scr.getBoundingClientRect(), p = page.getBoundingClientRect();
+      if (!a.width || !frag.animate) return;
+      Object.assign(frag.style, {
+        left: a.left - R.left + 'px', top: a.top - R.top + 'px', width: a.width + 'px', height: a.height + 'px',
+        backgroundImage: `url("${img.src}")`, backgroundSize: `${p.width}px ${p.height}px`, backgroundPosition: `${p.left - a.left}px ${p.top - a.top}px`,
+      });
+      const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+      const k = Math.min(b.width / a.width, b.height / a.height) * 0.9;
+      frag.animate([
+        { transform: 'translate(0, 0) scale(1)', opacity: 1, filter: 'blur(0)' },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 40}px) scale(${(1 + k) / 2})`, opacity: 1, filter: 'blur(0)', offset: 0.6 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${k})`, opacity: 0, filter: 'blur(8px)' },
+      ], { duration: 900, easing: 'cubic-bezier(.55, 0, .25, 1)' });
+    }
+
+    function show(n, first) {
+      stop();
+      cur = n;
+      root.querySelectorAll('[data-ba]').forEach((b) => b.classList.toggle('on', +b.dataset.ba === n));
+      const go = () => {
+        const k = pairs[n];
+        root.classList.add('reset');
+        root.classList.remove('out', ...STEPS);
+        page.style.aspectRatio = k.ar[0] + ' / ' + k.ar[1];
+        page.style.setProperty('--arh', k.ar[1] / k.ar[0]);
+        img.src = src(k.was);
+        shot.src = src(k.now);
+        scr.setAttribute('href', u('/course/' + k.course));
+        $('.ba-cap').textContent = k.page;
+        const [x, y, w, h] = k.hl;
+        Object.assign(hl.style, { left: x + '%', top: y + '%', width: w + '%', height: h + '%' });
+        void root.offsetWidth;
+        root.classList.remove('reset');
+        if (still) { root.classList.add(...STEPS); return; }
+        later(250, () => root.classList.add('s1'));   // по странице идёт сканер
+        later(1650, () => root.classList.add('s2'));  // находит главное
+        later(2300, fly);                              // абзац улетает в экран
+        later(2900, () => root.classList.add('s3'));  // включается лекция
+        later(3500, () => root.classList.add('s4'));  // и комплект к ней
+        later(9500, () => show((cur + 1) % pairs.length));
+      };
+      if (first) go();
+      else { root.classList.add('out'); later(300, go); }
+    }
+
+    root.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-ba]');
+      if (b && +b.dataset.ba !== cur) show(+b.dataset.ba);
+    });
+    show(0, true);
+  }
 
   async function home() {
     const data = await getPublic();
@@ -160,52 +209,48 @@
     const top = [...data.courses].sort((a, b) => (b.videoCount * 2 + b.kitCount) - (a.videoCount * 2 + a.kitCount)).slice(0, 3);
     const c = data.contacts || {};
     const demo = data.demoCabinet;
-    const caseHtml = (k) => `<div class="case-row">
-        <div class="case-text">
-          <div class="dtag" style="--c:var(--accent)">${esc(k.dir)}</div>
-          <h3>${esc(k.title)}</h3>
-          <p>${esc(k.fact)}</p>
-          <a class="btn sm" href="${u('/course/' + k.course)}" data-link>Смотреть курс ${I.arrow}</a>
-        </div>
-        <div class="case-vis">
-          <div class="case-book"><span class="case-lbl">Было · учебник</span>${k.book.map((b) => `<img src="${u('/img/cases/' + b + '.jpg')}" alt="" loading="lazy" />`).join('')}</div>
-          <div class="case-arrow">→</div>
-          <div class="case-frames"><span class="case-lbl now">Стало · лекция</span>${k.frames.map((f) => `<img src="${u('/img/cases/' + f + '.jpg')}" alt="" loading="lazy" />`).join('')}</div>
-        </div>
-      </div>`;
+    // Было → стало: настоящая страница учебника и кадр лекции по ней.
+    // hl — абзац, из которого сделан кадр: left, top, width, height в % страницы
+    const PAIRS = [
+      { tab: 'Сварка', was: 'case_book_p45', ar: [700, 894], now: 'case_frame_temp', page: 'учебник по сварке, стр. 45', hl: [21, 10.8, 65, 10.2], course: 'svarka-tehnologiya' },
+      { tab: 'Робототехника', was: 'case2_book_p23', ar: [700, 1024], now: 'case2_frame_types', page: 'учебник по робототехнике, стр. 23', hl: [9.5, 21.8, 82, 13.6], course: 'meh-osnovy' },
+    ];
     app.innerHTML = `
       <div class="wrap">
-        <section class="hero">
-          <div>
-            <div class="eyebrow">Цифровое издательство учебных материалов</div>
-            <h1>Учебники и экспертиза компании — в готовые курсы <em>за 2–3 недели</em>.</h1>
-            <p class="sub">Видеолекции с ведущим, презентации, конспекты, тесты и практические форматы — комплектом и в 3–10 раз дешевле классического продакшна.</p>
-            <div class="cta">
-              ${featured ? `<a class="btn primary" href="${u('/lecture/' + featured.id)}" data-link>${I.playSm} Смотреть пример лекции</a>` : ''}
-              <a class="btn" href="#contacts" data-link>Обсудить проект</a>
-            </div>
-          </div>
-          ${featured ? `<a class="hero-shot" href="${u('/lecture/' + featured.id)}" data-link>
-            <img src="${esc(u(featured.poster))}" alt="" />
-            <span class="play"><span>${I.play}</span></span>
-            <span class="lbl">Лекция · ${esc(featured.title)}</span>
-          </a>` : ''}
+        <section class="hero2">
+          <h1>Учебники, которые не&nbsp;читают,&nbsp;— <em>в&nbsp;курсы, которые смотрят</em></h1>
+          <p class="sub">Переиздаём учебные материалы вашей компании. К&nbsp;каждой главе&nbsp;— видеолекция, презентация, методичка и&nbsp;тест.</p>
         </section>
 
-        <div class="facts">
-          <div class="fact"><b>2–3 недели</b><span>на курс вместо 2–4 месяцев классического продакшна</span></div>
-          <div class="fact"><b>В 3–10 раз</b><span>дешевле: без студии, съёмок и долгих кругов правок</span></div>
-          <div class="fact"><b>50+ лекций</b><span>за 2 месяца для корпоративной академии промышленного холдинга</span></div>
-        </div>
+        <section class="ba" id="cases">
+          <div class="ba-head">
+            <div class="ba-tabs">${PAIRS.map((k, i) => `<button class="${i ? '' : 'on'}" data-ba="${i}">${esc(k.tab)}</button>`).join('')}</div>
+            <span class="ba-note">настоящие страницы и кадры из наших курсов</span>
+          </div>
+          <div class="ba-scene">
+            <figure class="ba-was">
+              <figcaption><span class="ba-tag">Было</span><span class="ba-cap"></span></figcaption>
+              <div class="ba-page"><img alt="Страница учебника" /><i class="ba-hl"></i><i class="ba-scan"></i></div>
+            </figure>
+            <div class="ba-arr"><i></i><i></i><i></i></div>
+            <figure class="ba-now">
+              <figcaption><span class="ba-tag now">Стало</span><span>видеолекция по этой странице</span></figcaption>
+              <a class="ba-screen" data-link><span class="ba-wait">собираем лекцию<b><i></i><i></i><i></i></b></span><img alt="Кадр видеолекции" /><span class="ba-play">${I.arrow} Смотреть курс</span><span class="ba-bar"><i></i></span></a>
+              <div class="ba-kit">${['Видеолекция', 'Презентация', 'Методичка', 'Тест', 'SCORM для LMS'].map((x) => `<span>${I.check}${x}</span>`).join('')}</div>
+            </figure>
+            <div class="ba-frag"></div>
+          </div>
+        </section>
 
-        <section class="section" id="kit">
-          <div class="eyebrow">Что вы получаете</div>
-          <h2>Не видео, а комплект для обучения</h2>
-          <p class="lead">Каждая лекция выходит с материалами, по которым сотрудник учится, а наставник проверяет.</p>
-          <div class="kit-grid">${KIT_ITEMS.map(([t, d], i) => `<div class="kit-tile"><span class="n">${String(i + 1).padStart(2, '0')}</span><b>${esc(t)}</b><span>${esc(d)}</span></div>`).join('')}</div>
-          <div class="cta" style="margin-top:18px">
-            ${featured ? `<a class="btn" href="${u('/lecture/' + featured.id)}" data-link>Посмотреть комплект на примере лекции ${I.arrow}</a>` : ''}
-            <a class="btn" href="${u('/corp')}" data-link>Как мы работаем с учебными центрами ${I.arrow}</a>
+        <section class="ba-after" id="kit">
+          <div class="facts">
+            <div class="fact"><b>2–3 недели</b><span>на курс</span></div>
+            <div class="fact"><b>В 3–10 раз</b><span>дешевле продакшна</span></div>
+            <div class="fact"><b>50+ лекций</b><span>уже выпустили</span></div>
+          </div>
+          <div class="cta">
+            <a class="btn primary" href="#contacts" data-link>Обсудить проект</a>
+            ${featured ? `<a class="btn" href="${u('/lecture/' + featured.id)}" data-link>Смотреть пример лекции</a>` : ''}
           </div>
         </section>
 
@@ -213,13 +258,6 @@
           <div class="eyebrow">С чего вы приходите</div>
           <h2>Работаем с тем, что у вас есть, — или собираем с нуля</h2>
           <div class="scen-grid">${SCENARIOS.map(([t, d], i) => `<div class="scen ${i === 2 ? 'accent' : ''}"><span class="n">${String(i + 1).padStart(2, '0')}</span><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join('')}</div>
-        </section>
-
-        <section class="section" id="cases">
-          <div class="eyebrow">Кейсы</div>
-          <h2>Было учебником — стало курсом</h2>
-          <p class="lead">Плотный текст и таблицы превращаются в кадры, которые понятны с первого взгляда. Цифры и термины — те же, что в источнике.</p>
-          ${CASES.map(caseHtml).join('')}
         </section>
 
         <section class="section">
@@ -282,6 +320,7 @@
         </section>
         <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
       </div>`;
+    baStage(PAIRS);
     document.title = 'М-Платформа — цифровое издательство учебных материалов';
   }
 
