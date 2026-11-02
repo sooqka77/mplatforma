@@ -409,71 +409,83 @@
     const data = await getPublic();
     const c = data.contacts || {};
     const sample = data.lectures['svarka-istoriya-1'];
+    const demo = data.demoCabinet;
     const mail = c.email ? `mailto:${c.email}?subject=${encodeURIComponent('Пилотная лекция М-Платформы')}&body=${encodeURIComponent('Здравствуйте! Хотим пилотную лекцию по нашему материалу.\n\nКомпания и учебный центр:\nТема и материал (глава, регламент):\nДля кого обучение:\nКакая LMS используется:\nКонтакт:')}` : '';
+    const ic = (d) => `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    // этапы проекта: [когда, что, одна строка подробностей]
     const STEPS = [
-      ['До старта', 'Бриф на 30 минут и NDA', 'Вы передаёте материалы: учебник или главы, регламенты, методички — в любом виде. Назначаете эксперта для согласования.'],
-      ['Неделя 1', 'Пилотная лекция с комплектом', 'Видео, презентация, методичка, конспект и тест по одной главе. Согласуем стиль, ведущего, подачу.'],
-      ['Недели 2–3', 'Серия лекций', 'Готовим остальные главы. Каждый факт сверяем с источником, эксперт проверяет — 1–2 круга правок.'],
-      ['Сдача', 'Файлы и пакеты для LMS', 'Видео, презентации, методички и SCORM-пакеты — загружаете в свою LMS или открываете сотрудникам кабинет на платформе.'],
-      ['Дальше', 'Издание по подписке', 'План выпусков на год, новые лекции по графику, обновления при изменении стандартов, оборудования и регламентов.'],
+      ['До старта', 'Бриф и NDA', '30 минут созвона. Передаёте материалы в любом виде и назначаете эксперта.'],
+      ['Неделя 1', 'Пилотная лекция', 'Одна глава с полным комплектом — согласуем стиль, голос и подачу.'],
+      ['Недели 2–3', 'Серия лекций', 'Остальные главы. Каждый факт сверяем с источником, эксперт даёт 1–2 круга правок.'],
+      ['Сдача', 'Файлы и SCORM', 'Загружаете в свою LMS или открываете сотрудникам наш кабинет.'],
+      ['Дальше', 'Издание по подписке', 'План выпусков на год и обновления, когда меняются стандарты.'],
     ];
-    const FILES = [
-      ['Видеолекция с ведущим', 'MP4', 'Лекция по одной главе, ведущий-аватар, визуал к каждому блоку'],
-      ['Презентация', 'PDF, PPTX', 'Слайды лекции — для очного занятия и повторения'],
-      ['Методичка для преподавателя', 'DOCX, PDF', 'Цели и план занятия, понятия, вопросы для обсуждения, практика, проверка'],
-      ['Конспект и термины', 'DOCX, PDF', 'Краткое содержание и словарь — чтобы вернуться к теме без видео'],
-      ['Тест с пояснениями', 'в SCORM и DOCX', '10 вопросов к лекции, порог прохождения — 80%'],
-      ['SCORM-пакет', 'SCORM 1.2, ZIP', 'Видео, конспект и тест одним модулем: балл, статус и место остановки уходят в вашу LMS'],
+    const KIT = [
+      [ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4-2.5z"/>'), 'Видеолекция', 'MP4'],
+      [ic('<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/>'), 'Презентация', 'PPTX · PDF'],
+      [ic('<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/>'), 'Методичка', 'DOCX · PDF'],
+      [ic('<path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h8M8 16h5"/>'), 'Конспект и термины', 'DOCX · PDF'],
+      [ic('<path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="2"/>'), 'Тест с пояснениями', '10 вопросов · 80%'],
+      [ic('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>'), 'SCORM-пакет', 'SCORM 1.2 · ZIP'],
+    ];
+    const SAFE = [
+      [ic('<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>'), 'NDA до передачи материалов'],
+      [ic('<path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/>'), 'Все права — у вас, курс под вашим брендом'],
+      [ic('<path d="M4 7h16v12H4z"/><path d="M4 7l3-3h10l3 3M10 12h4"/>'), 'Можно ничего не хранить у нас: сдаём файлами'],
+      [ic('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/><path d="M5 5l14 14"/>'), 'Кабинет по паролю, закрыт от поисковиков'],
     ];
     app.innerHTML = `
       <div class="wrap">
-        <section class="corp-hero">
-          <div class="eyebrow">Для корпоративных университетов и учебных центров</div>
-          <h1>Переиздаём ваши учебные материалы в курсы — и сдаём прямо в вашу LMS</h1>
-          <p class="sub">Свежие и понятные форматы для сотрудников на основе того, что у вас уже есть: учебников, регламентов, методичек. За 2–3 недели и в 3–10 раз дешевле классического продакшна.</p>
-          <div class="cta">
-            ${mail ? `<a class="btn primary" href="${mail}">Запросить пилотную лекцию ${I.arrow}</a>` : ''}
-            <a class="btn" href="${u('/scorm/svarka-istoriya-1.zip')}" download>${I.down} Пример SCORM-пакета</a>
+        <section class="cp-hero">
+          <div>
+            <div class="eyebrow">Корпоративным университетам и учебным центрам</div>
+            <h1>Курсы из ваших материалов — <em>сразу в&nbsp;вашу LMS</em></h1>
+            <p class="sub">2–3 недели на курс, от 2000 ₽ за минуту контента.</p>
+            <div class="cta">
+              ${mail ? `<a class="btn primary" href="${mail}">Запросить пилотную лекцию ${I.arrow}</a>` : ''}
+              <a class="btn" href="${u('/scorm/svarka-istoriya-1.zip')}" download>${I.down} Пример SCORM-пакета</a>
+            </div>
+          </div>
+          <div class="cp-lms" aria-hidden="true">
+            <div class="cp-pkg">${KIT[5][0]}<b>SCORM</b></div>
+            <div class="cp-dots"><i></i><i></i><i></i></div>
+            <div class="cp-sys">${['iSpring', 'WebTutor', 'Mirapolis', 'Moodle', 'и другие'].map((x) => `<span>${x}</span>`).join('')}</div>
           </div>
         </section>
 
-        <section class="section" style="padding-top:20px">
+        <section class="section">
           <div class="eyebrow">Как проходит проект</div>
-          <h2>От брифа до курса в вашей LMS — за 2–3 недели</h2>
-          <div class="timeline">${STEPS.map(([w, t, d], i) => `<div class="tl ${i === STEPS.length - 1 ? 'accent' : ''}"><span class="mono">${esc(w)}</span><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</div>
-        </section>
-
-        <section class="section">
-          <div class="eyebrow">Что вы получаете</div>
-          <h2>Комплект к каждой лекции — в форматах, которые принимает ваша система</h2>
-          <div class="files-table">
-            ${FILES.map(([t, f, d]) => `<div class="ft-row"><b>${esc(t)}</b><span class="mono">${esc(f)}</span><span>${esc(d)}</span></div>`).join('')}
+          <h2>От брифа до курса — за 2–3 недели</h2>
+          <div class="cp-tl">
+            <div class="cp-track"><i class="cp-fill"></i></div>
+            <div class="cp-nodes">${STEPS.map(([w, title], i) => `<button class="cp-node ${i ? '' : 'on'}" data-st="${i}"><span class="cp-dot">${i + 1}</span><small>${esc(w)}</small><b>${esc(title)}</b></button>`).join('')}</div>
+            <div class="cp-detail">${STEPS.map(([, title, d], i) => `<p class="${i ? '' : 'on'}" data-sd="${i}"><b>${esc(title)}.</b> ${esc(d)}</p>`).join('')}</div>
           </div>
-          <p class="lead" style="margin-top:16px">SCORM 1.2 загружается в iSpring LMS, WebTutor, Mirapolis, Moodle и другие системы с поддержкой стандарта.
-            ${sample ? `Посмотрите комплект целиком <a class="link" href="${u('/lecture/' + sample.id)}" data-link>на примере лекции</a>.` : ''}</p>
         </section>
 
         <section class="section">
-          <div class="corp-grid">
-            <div class="box-lg">
+          <div class="row-head">
+            <div><div class="eyebrow">Что вы получаете</div><h2>Комплект к каждой лекции</h2></div>
+            ${sample ? `<a class="btn" href="${u('/lecture/' + sample.id)}" data-link>Посмотреть на примере ${I.arrow}</a>` : ''}
+          </div>
+          <div class="cp-kit">${KIT.map(([i, t, f]) => `<div class="cp-k"><span class="cp-i">${i}</span><b>${esc(t)}</b><small>${esc(f)}</small></div>`).join('')}</div>
+        </section>
+
+        <section class="section">
+          <div class="cp-two">
+            <div class="cp-box">
               <div class="eyebrow">Права и безопасность</div>
               <h3>Ваши материалы остаются вашими</h3>
-              <ul>
-                <li>${I.check}<span>NDA — до передачи материалов</span></li>
-                <li>${I.check}<span>Все права на готовые материалы — у вас: курс выходит под вашим брендом</span></li>
-                <li>${I.check}<span>Можем ничего не размещать у себя: сдаём файлами и SCORM-пакетами в вашу LMS</span></li>
-                <li>${I.check}<span>Кабинет на платформе — по ссылке и паролю, закрыт от поисковиков</span></li>
-              </ul>
+              <div class="cp-safe">${SAFE.map(([i, t]) => `<div><span class="cp-i">${i}</span><span>${esc(t)}</span></div>`).join('')}</div>
             </div>
-            <div class="box-lg accent">
+            <div class="cp-box accent">
               <div class="eyebrow">Издание, а не разовый заказ</div>
-              <h3>Курсы обновляются вместе с вашим производством</h3>
-              <ul>
-                <li>${I.check}<span>Годовой план выпусков: новые лекции по графику</span></li>
-                <li>${I.check}<span>Обновления при изменении стандартов, оборудования и регламентов — в согласованные сроки</span></li>
-                <li>${I.check}<span>В кабинете видно, что вышло, что в работе и что обновлено</span></li>
-                <li>${I.check}<span>Материалы становятся активом компании: их можно предлагать партнёрам и рынку</span></li>
-              </ul>
+              <h3>Курсы обновляются вместе с производством</h3>
+              <div class="cp-pub">
+                <div><b>12</b><span>план выпусков на год</span></div>
+                <div><b>${I.check}</b><span>обновления при смене стандартов</span></div>
+              </div>
+              ${demo ? `<a class="btn" href="${u('/c/' + demo.slug)}" data-link>Посмотреть кабинет ${I.arrow}</a>` : ''}
             </div>
           </div>
         </section>
@@ -481,9 +493,9 @@
         <section class="section" id="pilot">
           <div class="cta-band">
             <div><h2>Пилотная лекция за неделю — без обязательств</h2>
-            <p>Пришлите одну главу или регламент: покажем лекцию с полным комплектом и SCORM-пакетом для вашей LMS.</p></div>
+            <p>Пришлите одну главу или регламент — покажем лекцию с комплектом и SCORM-пакетом.</p></div>
             <div class="cta">
-              ${mail ? `<a class="btn primary" href="${mail}">Написать на почту</a>` : ''}
+              ${mail ? `<a class="btn primary" href="${mail}">Запросить пилот ${I.arrow}</a>` : ''}
               ${c.telegram ? `<a class="btn" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
               ${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}
             </div>
@@ -491,6 +503,19 @@
         </section>
         <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
       </div>`;
+    // этапы: сами идут по кругу, клик — перейти к этапу
+    const tl = app.querySelector('.cp-tl');
+    let st = 0, timer;
+    const go = (n) => {
+      st = n;
+      tl.querySelectorAll('[data-st]').forEach((b) => { b.classList.toggle('on', +b.dataset.st === n); b.classList.toggle('done', +b.dataset.st < n); });
+      tl.querySelectorAll('[data-sd]').forEach((p) => p.classList.toggle('on', +p.dataset.sd === n));
+      tl.querySelector('.cp-fill').style.width = (n / (STEPS.length - 1)) * 100 + '%';
+      clearTimeout(timer);
+      timer = setTimeout(() => (tl.isConnected ? go((st + 1) % STEPS.length) : null), 4200);
+    };
+    tl.addEventListener('click', (e) => { const b = e.target.closest('[data-st]'); if (b) go(+b.dataset.st); });
+    go(0);
     document.title = 'Для корпоративных университетов — М-Платформа';
   }
 
