@@ -41,7 +41,8 @@
   // ───── Данные
   let pub = null;
   async function getPublic() {
-    if (!pub) pub = await fetch(STATIC ? u('/data/public.json') : '/api/public').then((r) => r.json());
+    const load = () => fetch(STATIC ? u('/data/public.json') : '/api/public').then((r) => r.json());
+    if (!pub) pub = await load().catch(() => new Promise((ok) => setTimeout(ok, 800)).then(load)); // сеть моргнула — вторая попытка
     return pub;
   }
   const lecturesOfCourse = (data, c) => c.modules.flatMap((m) => m.lectures).map((id) => data.lectures[id]).filter(Boolean);
@@ -213,6 +214,24 @@
       tr.addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (b) go(+b.dataset.tr); });
       tr._go = go;
     }
+    const tz = app.querySelector('.tz-video');
+    if (tz) {
+      const v = tz.querySelector('video');
+      tz.querySelector('.tz-play').addEventListener('click', () => { v.controls = true; tz.classList.add('on'); v.play(); });
+      v.addEventListener('ended', () => { tz.classList.remove('on'); v.controls = false; v.load(); });
+    }
+    app.querySelector('.reel')?.addEventListener('click', (e) => {
+      const b = e.target.closest('.reel-item');
+      if (!b) return;
+      const box = document.createElement('div');
+      box.className = 'lightbox';
+      box.innerHTML = `<figure><img src="${b.dataset.src}" alt="" /><figcaption>${esc(b.dataset.cap)}</figcaption></figure>`;
+      const close = () => { box.remove(); removeEventListener('keydown', onKey); };
+      const onKey = (ev) => ev.key === 'Escape' && close();
+      box.addEventListener('click', close);
+      addEventListener('keydown', onKey);
+      document.body.append(box);
+    });
     const io = new IntersectionObserver((es) => es.forEach((en) => {
       if (!en.isIntersecting) return;
       en.target.classList.add('in');
@@ -234,6 +253,7 @@
       { tab: 'Сварка', was: 'case_book_p45', ar: [700, 894], now: 'case_frame_temp', page: 'учебник по сварке, стр. 45', hl: [21, 10.8, 65, 10.2], course: 'svarka-tehnologiya' },
       { tab: 'Робототехника', was: 'case2_book_p23', ar: [700, 1024], now: 'case2_frame_types', page: 'учебник по робототехнике, стр. 23', hl: [9.5, 21.8, 82, 13.6], course: 'meh-osnovy' },
     ];
+    const REEL = [['arc', 'Анатомия сварочной дуги'], ['types', 'Виды подобия роботов'], ['temp', 'Температура дуги'], ['asimo', 'Антропоморфный робот'], ['jet', 'Реактивная струя дуги'], ['primate', 'Приматоморфный робот'], ['blow', 'Магнитное дутьё'], ['snake', 'Серпентоморфные роботы']];
     app.innerHTML = `
       <div class="wrap">
         <section class="hero2">
@@ -245,6 +265,7 @@
           <div class="ba-head">
             <div class="ba-tabs">${PAIRS.map((k, i) => `<button class="${i ? '' : 'on'}" data-ba="${i}">${esc(k.tab)}</button>`).join('')}</div>
             <span class="ba-note">настоящие страницы и кадры из наших курсов</span>
+            <a class="ba-cta" href="#contacts" data-link>Хочу так с моим учебником ${I.arrow}</a>
           </div>
           <div class="ba-scene">
             <figure class="ba-was">
@@ -271,6 +292,26 @@
             <a class="btn primary" href="#contacts" data-link>Обсудить проект</a>
             ${featured ? `<a class="btn" href="${u('/lecture/' + featured.id)}" data-link>Смотреть пример лекции</a>` : ''}
           </div>
+        </section>
+
+        <section class="section tz-sec">
+          <div class="tz">
+            <div class="tz-text">
+              <div class="eyebrow">Послушайте</div>
+              <h2>30 секунд настоящей лекции</h2>
+              <p class="lead">Фрагмент из курса «Введение в сварку». Голос, слайды, темп — так лекция звучит для ваших сотрудников.</p>
+              ${featured ? `<a class="btn" href="${u('/lecture/' + featured.id)}" data-link>Вся лекция ${I.arrow}</a>` : ''}
+            </div>
+            <div class="tz-video">
+              <video src="${u('/teaser/teaser.mp4')}" poster="${u('/teaser/teaser.jpg')}" preload="none" playsinline></video>
+              <button class="tz-play" aria-label="Включить фрагмент со звуком"><span><svg width="34" height="34" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span><b>Включить со звуком · 0:32</b></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="reel" aria-label="Слайды наших лекций">
+          <div class="reel-head"><div class="eyebrow">Кадры из лекций</div><span class="mono">наведите — остановится, нажмите — откроется</span></div>
+          <div class="reel-track">${[0, 1].map((k) => `<div class="reel-row" ${k ? 'aria-hidden="true"' : ''}>${REEL.map(([f, cap]) => `<button class="reel-item" data-src="${u('/img/reel/' + f + '.jpg')}" data-cap="${esc(cap)}" ${k ? 'tabindex="-1"' : ''}><img src="${u('/img/reel/' + f + '.jpg')}" alt="${esc(cap)}" loading="lazy" /><span>${esc(cap)}</span></button>`).join('')}</div>`).join('')}</div>
         </section>
 
         <section class="section" id="trust">
@@ -350,8 +391,8 @@
           <div class="contacts">
             <div><div class="name">${esc(c.name)}</div><div class="role">${esc(c.role)}</div></div>
             <div class="links">
-              ${c.telegram ? `<a class="btn primary" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
-              ${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}
+              ${c.email ? `<a class="btn primary" href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Пилотная лекция')}&body=${encodeURIComponent('Здравствуйте! Хотим пилотную лекцию.\n\nКомпания:\nТема и материал (глава, регламент):\nДля кого обучение:\nКонтакт:')}">Запросить пилот ${I.arrow}</a>` : ''}
+              ${c.telegram ? `<a class="btn" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
               ${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}
             </div>
           </div>
