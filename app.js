@@ -536,6 +536,9 @@
   }
 
   // ───── Курс (публичный и в кабинете)
+  // Внизу публичных курса и лекции: «хочу такое по своему учебнику»
+  const pilotBand = (base) => base ? '' : `<section class="pilot-band"><div><b>Нужен такой курс по вашему учебнику?</b><span>Пришлите одну главу — через неделю покажем лекцию с комплектом.</span></div><a class="btn primary" href="${u('/#contacts')}" data-link>Запросить пилот ${I.arrow}</a></section>`;
+
   function coursePage(data, id, base, crumbsHtml) {
     const c = data.courses.find((x) => x.id === id);
     if (!c) return notFound();
@@ -574,6 +577,7 @@
             ${c.source ? `<div class="box"><h4>Источник</h4><p>${esc(c.source)}</p></div>` : ''}
           </aside>
         </section>
+        ${pilotBand(base)}
       </div>`;
     document.title = `${c.title} — М-Платформа`;
   }
@@ -744,6 +748,7 @@ table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:4p
             }).join('')}
           </aside>
         </div>
+        ${pilotBand(base)}
       </div>`;
     tabState = { l };
     app.querySelector('.ltabs')?.addEventListener('click', (e) => { const t = e.target.closest('.ltab'); if (t) showTab(t.dataset.tab); });

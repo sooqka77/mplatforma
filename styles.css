@@ -660,3 +660,70 @@ a.fresh-item:hover { border-color: var(--accent-line); background: var(--accent-
 .lightbox figcaption { color: #fff; margin-top: 12px; font-size: 15px; text-align: center; }
 @keyframes lbIn { from { opacity: 0; } }
 html, body { overflow-x: clip; }
+
+/* CTA внизу курса и лекции */
+.pilot-band { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; margin: 48px 0 8px; padding: 22px 26px; border-radius: 18px; background: var(--accent-wash-2); border: 1px solid var(--accent-line); }
+.pilot-band b { display: block; font-weight: 500; font-size: 20px; letter-spacing: -.01em; }
+.pilot-band span { color: var(--ink-2); font-size: 15px; }
+
+/* ───── Телефон: короче, без лишнего вертикального скролла */
+@media (max-width: 720px) {
+  .wrap { padding: 0 16px; }
+  .hero2 { padding: 24px 0 18px; }
+  .hero2 h1 { font-size: 34px; }
+  /* сцена было → стало компактнее: страница учебника маленькая */
+  .ba { padding: 12px 12px 14px; }
+  .ba-head { margin-bottom: 10px; }
+  .ba-tabs button { padding: 6px 10px; font-size: 13px; }
+  .ba-cta { height: 34px; font-size: 13px; padding: 0 10px; }
+  .ba-page { height: min(210px, calc(100cqw * var(--arh, 1.28))); }
+  .ba-arr { height: 26px; }
+  .ba figcaption { margin-bottom: 6px; font-size: 13px; }
+  .ba-kit { gap: 6px; margin-top: 10px; }
+  .ba-kit span { height: 30px; font-size: 13px; padding: 0 9px 0 7px; }
+  /* цифры — компактные строки */
+  .ba-after { padding-top: 20px; gap: 18px; }
+  .ba-after .facts { grid-template-columns: 1fr; gap: 0; }
+  .ba-after .fact { display: flex; align-items: baseline; gap: 12px; border-top: 1px solid var(--line); padding: 10px 0; }
+  .ba-after .fact b { font-size: 22px; flex: none; }
+  .ba-after .fact span { font-size: 14px; }
+  .ba-after .cta .btn { flex: 1; }
+  .section { padding-top: 44px; }
+  .section h2 { font-size: 28px; }
+  .section .lead { font-size: 16px; margin-bottom: 18px; }
+  /* доверие: вопросы — строка вкладок над сценой */
+  .tr { gap: 12px; }
+  .tr-tabs { flex-direction: row; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .tr-tabs::-webkit-scrollbar { display: none; }
+  .tr-tabs button { flex: none; padding: 10px 14px; border-radius: 12px; }
+  .tr-tabs button b { font-size: 15px; white-space: nowrap; }
+  .tr-tabs button span { display: none; }
+  .tr-stage { min-height: 300px; }
+  .tr-scene { padding: 16px; }
+  .tr-cap { font-size: 14px; }
+  .tr-fact { grid-template-columns: 1.4fr 30px 1fr; }
+  .tr-note { font-size: 12px; }
+  .tr-row { grid-template-columns: 84px 1fr 44px; padding: 10px; font-size: 13px; }
+  /* год издания */
+  .pub { padding: 24px 18px; gap: 20px; }
+  .yr-legend { flex-direction: column; gap: 8px; }
+  .pilot { margin-bottom: 24px; }
+  .pl-step { padding: 12px 14px; }
+  .pl-step b { width: 40px; height: 40px; font-size: 18px; }
+  .contacts .links { width: 100%; }
+  .contacts .links .btn { flex: 1 1 100%; }
+  /* каталог: направления — одна строка с прокруткой вбок */
+  #dirs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px 4px; }
+  #dirs::-webkit-scrollbar { display: none; }
+  #dirs .dopt { flex: none; width: auto; white-space: nowrap; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+  #dirs .dopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .side-label { display: none; }
+  /* лекция: вкладки одной строкой */
+  .ltabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+  .ltabs::-webkit-scrollbar { display: none; }
+  .ltab { flex: none; white-space: nowrap; }
+  .pilot-band { padding: 18px; }
+  .pilot-band .btn { width: 100%; }
+}
+.watch > * { min-width: 0; }
+@media (max-width: 960px) { .watch { grid-template-columns: minmax(0, 1fr); } }
