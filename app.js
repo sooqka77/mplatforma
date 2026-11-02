@@ -285,8 +285,8 @@
         <section class="ba-after" id="kit">
           <div class="facts">
             <div class="fact"><b>2–3 недели</b><span>на курс</span></div>
-            <div class="fact"><b>В 3–10 раз</b><span>дешевле продакшна</span></div>
-            <div class="fact"><b>50+ лекций</b><span>для Корпоративной академии Росатома</span></div>
+            <div class="fact"><b>от 2000 ₽</b><span>за минуту контента — в 3–10 раз дешевле продакшна</span></div>
+            <div class="fact"><b>200+ лекций</b><span>для корпоративных академий</span></div>
           </div>
           <div class="cta">
             <a class="btn primary" href="#contacts" data-link>Обсудить проект</a>
