@@ -130,11 +130,6 @@
   }
 
   // ───── Главная: цифровое издательство учебных материалов
-  const SCENARIOS = [
-    ['Есть учебник или регламент', 'Переводим главы в серию лекций с полным комплектом. Факты — строго по источнику: ни одной выдуманной цифры.'],
-    ['Нужен курс, а материалов нет', 'Соберём курс для сотрудников из стандартных учебников, ГОСТов и отраслевых источников и согласуем с вашим экспертом.'],
-    ['Есть сильные эксперты', 'Издадим их знания как курс под вашим брендом. Материалы становятся активом компании: усиливают бренд и экспертизу, их можно предлагать партнёрам и рынку.'],
-  ];
 
   // Анимация «было → стало»: абзац уходит со страницы учебника и становится кадром лекции
   function baStage(pairs) {
@@ -203,10 +198,34 @@
     show(0, true);
   }
 
+  // Ниже первого экрана: сцены «доверие» сами листаются, год издания и пилот оживают при прокрутке
+  function homeScenes() {
+    const tr = app.querySelector('.tr');
+    if (tr) {
+      let cur = 0, timer;
+      const go = (n) => {
+        cur = n;
+        tr.querySelectorAll('[data-tr]').forEach((b) => b.classList.toggle('on', +b.dataset.tr === n));
+        tr.querySelectorAll('[data-sc]').forEach((s) => s.classList.toggle('on', +s.dataset.sc === n));
+        clearTimeout(timer);
+        timer = setTimeout(() => (tr.isConnected ? go((cur + 1) % 3) : null), 6500);
+      };
+      tr.addEventListener('click', (e) => { const b = e.target.closest('[data-tr]'); if (b) go(+b.dataset.tr); });
+      tr._go = go;
+    }
+    const io = new IntersectionObserver((es) => es.forEach((en) => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add('in');
+      if (en.target === tr) tr._go(0);
+      io.unobserve(en.target);
+    }), { threshold: 0.35 });
+    app.querySelectorAll('.tr, .yr, .pilot').forEach((el) => io.observe(el));
+  }
+
   async function home() {
     const data = await getPublic();
     const featured = data.lectures['svarka-istoriya-1'] || Object.values(data.lectures).find(watchable);
-    const top = [...data.courses].sort((a, b) => (b.videoCount * 2 + b.kitCount) - (a.videoCount * 2 + a.kitCount)).slice(0, 3);
+    const top = data.courses.filter((x) => x.direction !== 'triz').sort((a, b) => (b.videoCount * 2 + b.kitCount) - (a.videoCount * 2 + a.kitCount)).slice(0, 3);
     const c = data.contacts || {};
     const demo = data.demoCabinet;
     // Было → стало: настоящая страница учебника и кадр лекции по ней.
@@ -246,7 +265,7 @@
           <div class="facts">
             <div class="fact"><b>2–3 недели</b><span>на курс</span></div>
             <div class="fact"><b>В 3–10 раз</b><span>дешевле продакшна</span></div>
-            <div class="fact"><b>50+ лекций</b><span>уже выпустили</span></div>
+            <div class="fact"><b>50+ лекций</b><span>для Корпоративной академии Росатома</span></div>
           </div>
           <div class="cta">
             <a class="btn primary" href="#contacts" data-link>Обсудить проект</a>
@@ -254,65 +273,84 @@
           </div>
         </section>
 
-        <section class="section" id="scenarios">
-          <div class="eyebrow">С чего вы приходите</div>
-          <h2>Работаем с тем, что у вас есть, — или собираем с нуля</h2>
-          <div class="scen-grid">${SCENARIOS.map(([t, d], i) => `<div class="scen ${i === 2 ? 'accent' : ''}"><span class="n">${String(i + 1).padStart(2, '0')}</span><h3>${esc(t)}</h3><p>${esc(d)}</p></div>`).join('')}</div>
+        <section class="section" id="trust">
+          <div class="eyebrow">Почему нам доверяют учебники</div>
+          <h2>Три вопроса, которые вы зададите</h2>
+          <div class="tr">
+            <div class="tr-tabs">
+              <button class="on" data-tr="0"><b>А факты точные?</b><span>Каждый — со ссылкой на страницу вашего учебника</span><i></i></button>
+              <button data-tr="1"><b>Кто проверяет?</b><span>Ваш эксперт принимает готовое: 1–2 круга правок</span><i></i></button>
+              <button data-tr="2"><b>Как это попадёт к людям?</b><span>Пакет SCORM в вашу LMS — или наш кабинет</span><i></i></button>
+            </div>
+            <div class="tr-stage">
+              <div class="tr-scene on" data-sc="0">
+                <div class="tr-fact">
+                  <div class="tr-crop frame"><span class="tr-mark" style="left:62%;top:24%;width:31%;height:13%"></span></div>
+                  <svg class="tr-link" viewBox="0 0 100 40" preserveAspectRatio="none"><path d="M2 20 C 40 20, 60 20, 98 20"/></svg>
+                  <div class="tr-crop book"><span class="tr-mark" style="left:21%;top:11%;width:65%;height:10%"></span></div>
+                </div>
+                <div class="tr-cap"><span class="chip-ok">${I.check} 7000 °C</span> кадр лекции ← учебник, стр. 45</div>
+              </div>
+              <div class="tr-scene" data-sc="1">
+                <div class="tr-doc">
+                  <div class="tr-line w90"></div><div class="tr-line w70"><em class="tr-note n1">термин: «катет шва»</em></div>
+                  <div class="tr-line w80"></div><div class="tr-line w60"><em class="tr-note n2">уточнить по ГОСТ</em></div><div class="tr-line w85"></div>
+                  <div class="tr-stamp">${I.check} Согласовано</div>
+                </div>
+                <div class="tr-cap"><span class="tr-round">круг 1</span><span class="tr-round r2">круг 2</span> эксперт не пишет — он проверяет</div>
+              </div>
+              <div class="tr-scene" data-sc="2">
+                <div class="tr-lms">
+                  <div class="tr-pkg">SCORM<br><small>лекция.zip</small></div>
+                  <div class="tr-win">
+                    <div class="tr-bar"><i></i><i></i><i></i><span>Ваша LMS</span></div>
+                    ${[['Иванов А.', 92], ['Петрова Е.', 85], ['Сидоров К.', 64]].map(([n, v]) => `<div class="tr-row"><span>${n}</span><b><i style="--v:${v}%"></i></b><em>${v >= 80 ? 'сдал' : 'учится'}</em></div>`).join('')}
+                  </div>
+                </div>
+                <div class="tr-cap">балл, статус и место остановки — сразу в вашей системе</div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section class="section">
-          <div class="closed">
+        <section class="section" id="pub">
+          <div class="pub">
             <div>
               <div class="eyebrow">Издание, а не разовый заказ</div>
-              <h2>Мы остаёмся вашим издательством</h2>
-              <p class="lead" style="margin:0 0 20px">Курс растёт и обновляется вместе с вашим производством — в кабинете компании.</p>
-              ${demo ? `<a class="btn primary" href="${u('/c/' + demo.slug)}" data-link>Посмотреть пример кабинета ${I.arrow}</a>` : ''}
+              <h2>Курс живёт вместе с&nbsp;производством</h2>
+              <p class="lead" style="margin:0 0 22px">Новые лекции — по графику. Поменялся стандарт — обновляем.</p>
+              ${demo ? `<a class="btn primary" href="${u('/c/' + demo.slug)}" data-link>Посмотреть кабинет ${I.arrow}</a>` : ''}
             </div>
-            <ul>
-              <li>${I.check}<span>Новые лекции выходят по графику — в кабинете видно, что вышло и что готовится</span></li>
-              <li>${I.check}<span>Обновляем материалы, когда меняются стандарты, оборудование и регламенты</span></li>
-              <li>${I.check}<span>Сотрудники смотрят в два клика: без регистрации, с продолжением с места остановки</span></li>
-              <li>${I.check}<span>Видео и презентации можно скачать для внутреннего обучения</span></li>
-            </ul>
+            <div class="yr">
+              <div class="yr-track"><i class="yr-fill"></i></div>
+              <div class="yr-months">${['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'].map((m, i) => `<div class="yr-m" style="--i:${i}"><span class="yr-dot ${[2, 5, 8, 11].includes(i) ? 'rel' : ''} ${i === 6 ? 'upd' : ''}"></span><small>${m}</small></div>`).join('')}</div>
+              <div class="yr-legend"><span><i class="lg rel"></i>новый выпуск</span><span><i class="lg upd"></i>изменился ГОСТ → лекция обновлена</span></div>
+            </div>
           </div>
         </section>
 
         <section class="section">
           <div class="row-head">
-            <div><div class="eyebrow">Открытый каталог</div><h2>Посмотрите, как выглядят наши курсы</h2></div>
+            <div><div class="eyebrow">Примеры</div><h2>Посмотрите курсы целиком</h2></div>
             <a class="btn" href="${u('/catalog')}" data-link>Весь каталог ${I.arrow}</a>
           </div>
           <div class="cgrid">${top.map((x) => courseCard(data, x, '')).join('')}</div>
         </section>
 
-        <section class="section" id="how">
-          <div class="eyebrow">Как мы работаем</div>
-          <h2>Четыре шага от материалов до курса</h2>
-          <p class="lead">Эксперт заказчика не пишет сценарии — он принимает готовое.</p>
-          <div class="steps four">
-            <div class="step"><div class="n">01</div><h3>Материалы</h3><p>Учебник, методичка, регламент или интервью с экспертом — в любом виде.</p></div>
-            <div class="step"><div class="n">02</div><h3>Сценарий и визуал</h3><p>Делим на лекции, готовим текст и слайды. Каждый факт сверяем с источником.</p></div>
-            <div class="step"><div class="n">03</div><h3>Лекция и комплект</h3><p>Видео с ведущим, презентация, конспект, тест и практика. 1–2 круга правок.</p></div>
-            <div class="step accent"><div class="n">04</div><h3>Кабинет и обновления</h3><p>Курс в кабинете компании, новые выпуски и обновления по графику.</p></div>
-          </div>
-        </section>
-
-        ${window.MP_STUDIO ? `<section class="section">
-          <div class="studio-band">
-            <div><div class="eyebrow">Наша редакция</div><h3>Редакция на ИИ собирает 21 формат материалов из одного документа</h3>
-            <p>Конспекты, тесты, уроки одной точки, программы обучения — так мы делаем быстро и дёшево, не теряя точности.</p></div>
-            <a class="btn" href="${u(window.MP_STUDIO)}">Посмотреть редакцию ${I.arrow}</a>
-          </div>
-        </section>` : ''}
-
         <section class="section" id="contacts">
-          <div class="eyebrow">Контакты</div>
-          <h2>Соберём пилотную лекцию по вашему материалу</h2>
-          <p class="lead">Пришлите главу учебника или регламент — через неделю покажем лекцию с комплектом. Без обязательств.</p>
+          <div class="eyebrow">Пилот без обязательств</div>
+          <h2>Пришлите одну главу — через неделю лекция</h2>
+          <div class="pilot">
+            <div class="pl-step"><b>1</b><span>Глава или регламент</span></div>
+            <div class="pl-arr"><i></i></div>
+            <div class="pl-step"><b>7</b><span>дней — ваш эксперт не пишет сценарий</span></div>
+            <div class="pl-arr"><i></i></div>
+            <div class="pl-step on"><b>${I.check}</b><span>Лекция с полным комплектом</span></div>
+          </div>
           <div class="contacts">
             <div><div class="name">${esc(c.name)}</div><div class="role">${esc(c.role)}</div></div>
             <div class="links">
-              ${c.telegram ? `<a class="btn" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
+              ${c.telegram ? `<a class="btn primary" href="https://t.me/${esc(c.telegram)}" target="_blank" rel="noopener">Telegram · @${esc(c.telegram)}</a>` : ''}
               ${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}
               ${c.phone ? `<a class="btn" href="tel:${esc(c.phone.replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}
             </div>
@@ -321,6 +359,7 @@
         <footer class="foot"><span>mplatforma.tech</span><span>© М-Платформа, 2026</span></footer>
       </div>`;
     baStage(PAIRS);
+    homeScenes();
     document.title = 'М-Платформа — цифровое издательство учебных материалов';
   }
 
